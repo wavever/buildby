@@ -52,6 +52,25 @@ const translations = {
     label_size: 'Size:',
     table_head_size: 'Size',
 
+    // ── signature & notarization ─────────────────────────────────────────────
+    label_security_section: 'Signature & Notarization',
+    label_developer: 'Developer:',
+    label_team_id: 'Team ID:',
+    label_signature: 'Signature:',
+    label_notarization: 'Notarization:',
+    label_hardened_runtime: 'Hardened Runtime:',
+    label_publisher: 'Publisher:',
+    value_signed: 'Signed',
+    value_unsigned: 'Unsigned',
+    value_ad_hoc: 'Ad-hoc',
+    value_notarized: 'Notarized',
+    value_not_notarized: 'Not notarized',
+    value_apple_system: 'Apple System',
+    value_mac_app_store: 'Mac App Store',
+    value_rejected: 'Rejected',
+    value_yes: 'Yes',
+    value_no: 'No',
+
     // ── scan view ────────────────────────────────────────────────────────────
     scan_summary: 'Scanned {total} applications',
     scan_group_stat: '({count} apps, {pct}%)',
@@ -123,6 +142,25 @@ const translations = {
     label_version: '版本：',
     label_size: '大小：',
     table_head_size: '大小',
+
+    // ── signature & notarization ─────────────────────────────────────────────
+    label_security_section: '签名与公证',
+    label_developer: '开发者：',
+    label_team_id: '团队 ID：',
+    label_signature: '签名：',
+    label_notarization: '公证：',
+    label_hardened_runtime: '强化运行时：',
+    label_publisher: '签发者：',
+    value_signed: '已签名',
+    value_unsigned: '未签名',
+    value_ad_hoc: '临时签名',
+    value_notarized: '已公证',
+    value_not_notarized: '未公证',
+    value_apple_system: 'Apple 系统签名',
+    value_mac_app_store: 'Mac App Store',
+    value_rejected: '已拒绝',
+    value_yes: '是',
+    value_no: '否',
 
     // ── scan view ────────────────────────────────────────────────────────────
     scan_summary: '已扫描 {total} 个应用',

@@ -92,7 +92,7 @@ async function handleSingleApp(query) {
 
   if (matches.length === 1) {
     spinner.text = t('spinner_analyzing', { name: matches[0].name });
-    const result = analyzeApp(matches[0]);
+    const result = analyzeApp(matches[0], { includeSignature: true });
     spinner.succeed(t('spinner_analyzed', { name: matches[0].name }));
     printAppDetail(result);
     return;
@@ -100,7 +100,12 @@ async function handleSingleApp(query) {
 
   // Multiple matches: analyze all and show each
   spinner.text = t('spinner_multi_match', { count: matches.length });
-  const results = analyzeApps(matches);
+  const results = matches
+    .map((m) => {
+      try { return analyzeApp(m, { includeSignature: true }); }
+      catch { return null; }
+    })
+    .filter(Boolean);
   spinner.succeed(t('spinner_multi_done', { count: matches.length }));
 
   for (const result of results) {
@@ -124,7 +129,7 @@ async function handleSinglePath(dirPath, platform) {
   const spinner = ora(t('spinner_analyzing', { name })).start();
 
   try {
-    const result = analyzeApp({ name, path: dirPath, platform });
+    const result = analyzeApp({ name, path: dirPath, platform }, { includeSignature: true });
     spinner.succeed(t('spinner_analyzed', { name }));
     printAppDetail(result);
   } catch (err) {

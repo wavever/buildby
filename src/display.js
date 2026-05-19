@@ -51,6 +51,67 @@ export function colorStack(stackId, text) {
 }
 
 /**
+ * Render the signature & notarization section for a single app.
+ * No-ops when no signature data was collected (batch-scan path).
+ * @param {import('./analyzer.js').AnalysisResult} result
+ */
+function renderSecurity(result) {
+  const sig = result.signature;
+  const not = result.notarization;
+  if (!sig && !not) return;
+
+  console.log(`  ${chalk.bold(t('label_security_section'))}`);
+
+  if (result.platform === 'darwin') {
+    if (sig?.developer) {
+      console.log(`    ${chalk.bold(t('label_developer'))} ${chalk.dim(sig.developer)}`);
+    }
+    if (sig?.teamId) {
+      console.log(`    ${chalk.bold(t('label_team_id'))} ${chalk.dim(sig.teamId)}`);
+    }
+
+    if (sig) {
+      let label, color;
+      if (!sig.signed && !sig.adHoc) { label = t('value_unsigned'); color = chalk.red; }
+      else if (sig.adHoc) { label = t('value_ad_hoc'); color = chalk.yellow; }
+      else { label = t('value_signed'); color = chalk.green; }
+      console.log(`    ${chalk.bold(t('label_signature'))} ${color(label)}`);
+    }
+
+    if (not) {
+      let label, color;
+      if (not.rejected) { label = t('value_rejected'); color = chalk.red; }
+      else if (not.source === 'Apple System') { label = t('value_apple_system'); color = chalk.green; }
+      else if (/Mac App Store/i.test(not.source || '')) { label = t('value_mac_app_store'); color = chalk.green; }
+      else if (not.notarized) { label = t('value_notarized'); color = chalk.green; }
+      else { label = t('value_not_notarized'); color = chalk.yellow; }
+      console.log(`    ${chalk.bold(t('label_notarization'))} ${color(label)}`);
+    } else if (sig?.notarizationTicket) {
+      // spctl unavailable / timed out, but codesign reported a stapled ticket.
+      console.log(`    ${chalk.bold(t('label_notarization'))} ${chalk.green(t('value_notarized'))}`);
+    }
+
+    if (sig) {
+      const mark = sig.hardenedRuntime
+        ? chalk.green(`✓ ${t('value_yes')}`)
+        : chalk.yellow(`✗ ${t('value_no')}`);
+      console.log(`    ${chalk.bold(t('label_hardened_runtime'))} ${mark}`);
+    }
+  } else if (result.platform === 'win32' && sig) {
+    if (sig.publisher) {
+      console.log(`    ${chalk.bold(t('label_publisher'))} ${chalk.dim(sig.publisher)}`);
+    }
+    const status = sig.status || (sig.signed ? 'Valid' : 'NotSigned');
+    const color = sig.signed
+      ? chalk.green
+      : (status === 'NotSigned' ? chalk.red : chalk.yellow);
+    console.log(`    ${chalk.bold(t('label_signature'))} ${color(status)}`);
+  }
+
+  console.log();
+}
+
+/**
  * Print a single app's tech stack details.
  * @param {import('./analyzer.js').AnalysisResult} result
  */
@@ -100,6 +161,8 @@ export function printAppDetail(result) {
   if (result.metadata?.bundleId || result.metadata?.version || result.sizeBytes > 0) {
     console.log();
   }
+
+  renderSecurity(result);
 }
 
 /**
