@@ -4,9 +4,13 @@
 
 可以快速看出一个应用是使用 **原生技术**（Swift、Objective‑C、Win32 等），还是使用 **跨平台框架**（Electron、Flutter、Tauri、Qt、JVM、CEF、NW.js、React Native、wxWidgets 等）构建的。
 
+除了识别技术栈，`buildby` 还会展示每个应用的 **签名与公证** 信息——开发者名称、Team ID、签名状态、Apple 公证状态（macOS）或 Authenticode 状态（Windows），以及是否启用了强化运行时（Hardened Runtime）。
+
 ## 截图
-![](/screenshot/img-app.png)
-![](/screenshot/img-scan.png)
+
+| 查看单个应用 | 扫描所有已安装应用 | 按技术栈过滤 |
+| :---: | :---: | :---: |
+| ![](/screenshot/img-app.png) | ![](/screenshot/img-scan.png) | ![](/screenshot/img-filter.png) |
 
 ### 安装
 
@@ -41,7 +45,7 @@ buildby "clash verge"
   Discord
   /Applications/Discord.app
 
-   跨平台    ⚡ Electron
+   跨平台   ⚡ Electron
 
   使用 Web 技术（HTML/CSS/JS）构建的跨平台桌面应用
   https://www.electronjs.org
@@ -50,10 +54,19 @@ buildby "clash verge"
     • Electron Framework.framework
     • app.asar
 
-  Bundle ID：com.hnc.Discord
-  版本：0.0.335
-  大小：xxx MB
+  Bundle ID： com.hnc.Discord
+  版本： 0.0.335
+  大小： 375.4 MB
+
+  签名与公证
+    开发者： Discord, Inc.
+    团队 ID： 53Q6R32WPB
+    签名： 已签名
+    公证： 已公证
+    强化运行时： ✓ 是
 ```
+
+> **签名与公证** 部分仅在单应用查看时输出（`buildby <name>` 与 `--path`）。`--scan` 与 `--<stack>` 模式为了保证批量扫描速度，会跳过这一部分。
 
 #### 扫描所有已安装应用
 
@@ -118,7 +131,8 @@ buildby --path "C:\Program Files\SomeApp"
 3. **JVM / .NET / 其他运行时检测**：识别打包的 JRE/JBR、.NET 运行时以及关联目录结构。  
 4. **Tauri / wxWidgets 等特定栈**：结合 `otool -L` / DLL 名称 + 资源分布做多信号判断。  
 5. **元数据提取**：从 `Info.plist` 解析 Bundle ID、版本号和展示名称。  
-6. **兜底策略**：如果未匹配到任何跨平台特征，则将应用归类为原生技术栈。
+6. **签名与公证**：macOS 上调用 `codesign -dv` 与 `spctl --assess`，Windows 上调用 PowerShell `Get-AuthenticodeSignature`，提取开发者 / Team ID / 签发者，以及 Apple 公证或 Authenticode 信任状态。  
+7. **兜底策略**：如果未匹配到任何跨平台特征，则将应用归类为原生技术栈。
 
 检测按照优先级顺序依次执行，特征越独特的框架越先匹配，以减少误报和重复分类。
 
@@ -126,7 +140,8 @@ buildby --path "C:\Program Files\SomeApp"
 
 - Node.js >= 18  
 - 当前系统为 macOS 或 Windows  
-- macOS 上需要可用的 `otool`（Xcode Command Line Tools 自带，用于部分框架检测）
+- macOS 需要 `otool`、`codesign`、`spctl`（Xcode Command Line Tools 自带）  
+- Windows 需要 `powershell` 在 `PATH` 中（用于读取 Authenticode 签名）
 
 ### 许可证
 

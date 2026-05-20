@@ -4,9 +4,13 @@ Detect the technology stack of desktop applications on macOS and Windows.
 
 Instantly see whether an app is built with **Native** technologies (Swift, Objective-C, Win32) or a **cross-platform** framework (Electron, Flutter, Tauri, Qt, JVM, CEF, etc.).
 
-## Screenshot
-![](/screenshot/img-app.png)
-![](/screenshot/img-scan.png)
+Beyond the tech stack, `buildby` also reports each app's **signature & notarization** info — developer name, Team ID, signature status, Apple notarization (macOS) or Authenticode status (Windows), and whether Hardened Runtime is enabled.
+
+## Screenshots
+
+| Inspect a single app | Scan all installed apps | Filter by tech stack |
+| :---: | :---: | :---: |
+| ![](/screenshot/img-app.png) | ![](/screenshot/img-scan.png) | ![](/screenshot/img-filter.png) |
 
 ## Install
 
@@ -46,15 +50,23 @@ Output example:
   Cross-platform desktop apps with web technologies (HTML/CSS/JS)
   https://www.electronjs.org
 
-  Confidence: HIGH
-
   Evidence:
     • Electron Framework.framework
     • app.asar
 
   Bundle ID: com.hnc.Discord
-  Version: 0.0.335
+  Version:   0.0.335
+  Size:      375.4 MB
+
+  Signature & Notarization
+    Developer:        Discord, Inc.
+    Team ID:          53Q6R32WPB
+    Signature:        Signed
+    Notarization:     Notarized
+    Hardened Runtime: ✓ Yes
 ```
+
+> The **Signature & Notarization** section is only printed for single-app inspection (`buildby <name>` and `--path`). `--scan` and `--<stack>` skip it so batch scans stay fast.
 
 ### Scan all installed apps
 
@@ -121,7 +133,8 @@ Detection is purely **file-system based** — no admin privileges, no binary dis
 3. **JVM detection** — detect bundled JRE/JBR runtimes and `.jar` files
 4. **Tauri detection** — use `otool -L` (macOS) to check for system WebKit linkage + `resources/` directory
 5. **Metadata extraction** — parse `Info.plist` for bundle ID, version, and display name
-6. **Fallback** — apps with no cross-platform signatures are classified as Native
+6. **Signature & notarization** — invoke `codesign -dv` + `spctl --assess` on macOS, or PowerShell `Get-AuthenticodeSignature` on Windows, to surface developer / Team ID / publisher and Apple notarization or Authenticode trust status
+7. **Fallback** — apps with no cross-platform signatures are classified as Native
 
 Detection runs in priority order so the most distinctive signatures are checked first.
 
@@ -129,7 +142,8 @@ Detection runs in priority order so the most distinctive signatures are checked 
 
 - Node.js >= 18
 - macOS or Windows
-- `otool` available (built into macOS Xcode CLT, used for Tauri detection)
+- macOS: `otool`, `codesign`, `spctl` (all bundled with Xcode Command Line Tools)
+- Windows: `powershell` on `PATH` (for Authenticode signature reading)
 
 ## License
 
