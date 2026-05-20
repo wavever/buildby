@@ -12,7 +12,7 @@
     "url": "https://github.com/wavever/desktop-app-build-by/issues"
   },
   "bin": {
-    "buildby": "./bin/buildby.js"
+    "buildby": "bin/buildby.js"
   },
   "scripts": {
     "start": "node bin/buildby.js"
