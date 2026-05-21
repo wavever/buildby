@@ -1,10 +1,41 @@
-# buildby
+<div align="center">
+  <img src="./assets/buildby-icon.svg" width="112" height="112" alt="buildby logo">
 
-Detect the technology stack of desktop applications on macOS and Windows.
+  <h1>buildby</h1>
 
-Instantly see whether an app is built with **Native** technologies (Swift, Objective-C, Win32) or a **cross-platform** framework (Electron, Flutter, Tauri, Qt, JVM, CEF, etc.).
+  <p><strong>Detect what desktop apps are built with.</strong></p>
 
-Beyond the tech stack, `buildby` also reports each app's **signature & notarization** info — developer name, Team ID, signature status, Apple notarization (macOS) or Authenticode status (Windows), and whether Hardened Runtime is enabled.
+  <p>
+    <a href="https://www.npmjs.com/package/@wavever/buildby"><img alt="npm version" src="https://img.shields.io/npm/v/@wavever/buildby?color=CB3837&label=npm"></a>
+    <a href="https://github.com/wavever/buildby/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/wavever/buildby?label=release"></a>
+    <a href="https://github.com/wavever/buildby/actions/workflows/release.yml"><img alt="Release workflow" src="https://github.com/wavever/buildby/actions/workflows/release.yml/badge.svg"></a>
+    <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/wavever/buildby"></a>
+    <img alt="Node.js >= 18" src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white">
+    <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-555">
+  </p>
+
+  <p>
+    <a href="./README.zh-CN.md">简体中文</a>
+    ·
+    <a href="#install">Install</a>
+    ·
+    <a href="#usage">Usage</a>
+    ·
+    <a href="#detected-tech-stacks">Tech Stacks</a>
+  </p>
+</div>
+
+`buildby` inspects desktop applications on macOS and Windows, then tells you whether each app is built with **native technologies** (Swift, Objective-C, Win32) or a **cross-platform framework** such as Electron, Flutter, Tauri, Qt, JVM, CEF, NW.js, React Native, wxWidgets, Unity, or .NET.
+
+It also surfaces **signature and notarization** details for single-app inspection, including developer name, Team ID, signature status, Apple notarization on macOS, Authenticode status on Windows, and Hardened Runtime status.
+
+## Highlights
+
+- Fast file-system based detection with no admin privileges required.
+- Single-app inspection, full installed-app scan, and per-stack filters.
+- Signature and notarization metadata for macOS and Windows apps.
+- npm package, GitHub Release artifact, and GitHub Packages publishing.
+- Works as a small global CLI: `buildby <app name>`.
 
 ## Screenshots
 

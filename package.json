@@ -12,6 +12,7 @@
     "url": "https://github.com/wavever/buildby/issues"
   },
   "files": [
+    "assets/",
     "bin/",
     "src/",
     "screenshot/",

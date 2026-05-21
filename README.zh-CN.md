@@ -1,10 +1,41 @@
-## buildby
+<div align="center">
+  <img src="./assets/buildby-icon.svg" width="112" height="112" alt="buildby logo">
 
-检测 macOS 与 Windows 上桌面应用所使用的技术栈。
+  <h1>buildby</h1>
 
-可以快速看出一个应用是使用 **原生技术**（Swift、Objective‑C、Win32 等），还是使用 **跨平台框架**（Electron、Flutter、Tauri、Qt、JVM、CEF、NW.js、React Native、wxWidgets 等）构建的。
+  <p><strong>识别桌面应用到底是用什么技术构建的。</strong></p>
 
-除了识别技术栈，`buildby` 还会展示每个应用的 **签名与公证** 信息——开发者名称、Team ID、签名状态、Apple 公证状态（macOS）或 Authenticode 状态（Windows），以及是否启用了强化运行时（Hardened Runtime）。
+  <p>
+    <a href="https://www.npmjs.com/package/@wavever/buildby"><img alt="npm version" src="https://img.shields.io/npm/v/@wavever/buildby?color=CB3837&label=npm"></a>
+    <a href="https://github.com/wavever/buildby/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/wavever/buildby?label=release"></a>
+    <a href="https://github.com/wavever/buildby/actions/workflows/release.yml"><img alt="Release workflow" src="https://github.com/wavever/buildby/actions/workflows/release.yml/badge.svg"></a>
+    <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/wavever/buildby"></a>
+    <img alt="Node.js >= 18" src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white">
+    <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-555">
+  </p>
+
+  <p>
+    <a href="./README.md">English</a>
+    ·
+    <a href="#安装">安装</a>
+    ·
+    <a href="#用法">用法</a>
+    ·
+    <a href="#支持检测的技术栈">技术栈</a>
+  </p>
+</div>
+
+`buildby` 可以检测 macOS 与 Windows 上桌面应用所使用的技术栈，快速看出一个应用是使用 **原生技术**（Swift、Objective-C、Win32 等），还是使用 **跨平台框架**（Electron、Flutter、Tauri、Qt、JVM、CEF、NW.js、React Native、wxWidgets、Unity、.NET 等）构建的。
+
+除了识别技术栈，`buildby` 还会在单应用检查时展示 **签名与公证** 信息，包括开发者名称、Team ID、签名状态、Apple 公证状态（macOS）或 Authenticode 状态（Windows），以及是否启用了强化运行时（Hardened Runtime）。
+
+## 亮点
+
+- 基于文件系统快速检测，不需要管理员权限。
+- 支持单应用查看、全量扫描、按技术栈过滤。
+- 展示 macOS 与 Windows 应用的签名、公证和信任状态。
+- 同时支持 npm 包、GitHub Release 构建包和 GitHub Packages 发布。
+- 安装后直接作为全局 CLI 使用：`buildby <应用名>`。
 
 ## 截图
 
@@ -148,4 +179,3 @@ buildby --path "C:\Program Files\SomeApp"
 ### 许可证
 
 MIT
-

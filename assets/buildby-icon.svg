@@ -1,0 +1,35 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">buildby icon</title>
+  <desc id="desc">A desktop app window with stacked technology layers and a magnifying glass.</desc>
+  <defs>
+    <linearGradient id="windowGradient" x1="25" y1="18" x2="134" y2="142" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#12B8A6"/>
+      <stop offset="0.48" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="glassGradient" x1="81" y1="78" x2="133" y2="134" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8FAFC" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#DFF7F3" stop-opacity="0.72"/>
+    </linearGradient>
+    <filter id="shadow" x="8" y="12" width="144" height="144" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="160" height="160" rx="36" fill="#F8FAFC"/>
+  <g filter="url(#shadow)">
+    <rect x="24" y="28" width="112" height="92" rx="18" fill="url(#windowGradient)"/>
+    <rect x="34" y="42" width="92" height="10" rx="5" fill="#FFFFFF" fill-opacity="0.32"/>
+    <circle cx="42" cy="47" r="3" fill="#FFFFFF" fill-opacity="0.78"/>
+    <circle cx="52" cy="47" r="3" fill="#FFFFFF" fill-opacity="0.58"/>
+    <circle cx="62" cy="47" r="3" fill="#FFFFFF" fill-opacity="0.42"/>
+
+    <rect x="42" y="66" width="48" height="10" rx="5" fill="#FFFFFF" fill-opacity="0.88"/>
+    <rect x="42" y="84" width="64" height="10" rx="5" fill="#FFFFFF" fill-opacity="0.72"/>
+    <rect x="42" y="102" width="34" height="10" rx="5" fill="#FFFFFF" fill-opacity="0.56"/>
+
+    <circle cx="101" cy="94" r="23" fill="url(#glassGradient)" stroke="#FFFFFF" stroke-width="7"/>
+    <path d="M117 111L134 128" stroke="#0F766E" stroke-width="10" stroke-linecap="round"/>
+    <path d="M95 88H107M101 82V94" stroke="#0F766E" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>
