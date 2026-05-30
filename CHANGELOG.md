@@ -4,6 +4,46 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-05-30
+
+### Added
+
+- Added `buildby --all` / `buildby -a` as the primary full-scan command.
+  `--scan` remains available as a legacy alias.
+- Added short filter flags for all supported stacks, including `-e`
+  for Electron, `-f` for Flutter, `-t` for Tauri, and `-n` for Native.
+- Added a persistent analysis cache for batch scans. Apps whose version and
+  main executable fingerprint have not changed reuse previous analysis results.
+- Added `--no-cache` to force a fresh batch analysis.
+- Added automatic config file creation on first run:
+
+  ```json
+  {
+    "cache": true,
+    "excludeApps": []
+  }
+  ```
+
+  On macOS the default path is `~/.buildby/config.json`.
+- Added `excludeApps` config support to skip apps from `--all` and per-stack
+  scans by app name, Bundle ID, or full path.
+- Added English README screenshots.
+
+### Changed
+
+- Redesigned the full-scan output with a more shareable desktop app stack
+  profile, including a title line and compact distribution chart.
+- Improved table rendering for CJK, emoji, and ANSI-colored output.
+- Improved batch-scan speed with worker-based analysis, batched size reads, and
+  reduced expensive command calls.
+- Batch scans skip signature and localized-name lookups to keep scans fast.
+
+### Fixed
+
+- Fixed locale handling so neutral terminal locales such as `C.UTF-8` can still
+  fall back to the macOS system language, while explicit English locale
+  overrides work as expected.
+
 ## [1.1.0] — 2026-05-21
 
 ### Renamed
