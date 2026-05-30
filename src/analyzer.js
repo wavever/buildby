@@ -1,8 +1,13 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { execFileSync, spawnSync } from 'child_process';
+import { Worker } from 'worker_threads';
 import { detectStack } from './detectors/index.js';
 import { LOCALE } from './i18n.js';
+
+const CACHE_SCHEMA_VERSION = 1;
+const CACHE_FILE_NAME = 'analysis-cache-v1.json';
 
 /**
  * Get the disk usage of an app directory in bytes.
@@ -44,6 +49,42 @@ function getAppSize(appPath) {
 }
 
 /**
+ * Get disk usage for many app directories in one pass.
+ * On macOS/Linux this avoids spawning `du` once per app.
+ * @param {string[]} appPaths
+ * @returns {Map<string, number>}
+ */
+function getAppSizes(appPaths) {
+  const sizes = new Map();
+  if (appPaths.length === 0) return sizes;
+
+  if (process.platform !== 'win32') {
+    try {
+      const out = execFileSync('du', ['-sk', ...appPaths], {
+        timeout: Math.max(5000, appPaths.length * 250),
+        stdio: ['ignore', 'pipe', 'ignore'],
+        maxBuffer: Math.max(1024 * 1024, appPaths.length * 1024),
+      }).toString();
+
+      for (const line of out.trim().split('\n')) {
+        const match = line.match(/^(\d+)\s+(.+)$/);
+        if (!match) continue;
+        const kb = parseInt(match[1], 10);
+        if (!isNaN(kb)) sizes.set(match[2], kb * 1024);
+      }
+    } catch {
+      // Fall back per app below.
+    }
+  }
+
+  for (const appPath of appPaths) {
+    if (!sizes.has(appPath)) sizes.set(appPath, getAppSize(appPath));
+  }
+
+  return sizes;
+}
+
+/**
  * Format bytes into a human-readable size string.
  * @param {number} bytes
  * @returns {string}
@@ -82,6 +123,142 @@ function readPlistMetadata(appPath) {
   } catch {
     return null;
   }
+}
+
+function getCacheDir() {
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Caches', 'buildby');
+  }
+
+  if (process.platform === 'win32') {
+    return path.join(process.env.LOCALAPPDATA || os.tmpdir(), 'buildby', 'Cache');
+  }
+
+  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache'), 'buildby');
+}
+
+function loadAnalysisCache() {
+  try {
+    const cachePath = path.join(getCacheDir(), CACHE_FILE_NAME);
+    const cache = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+    if (cache?.schemaVersion !== CACHE_SCHEMA_VERSION || typeof cache.entries !== 'object') {
+      return { schemaVersion: CACHE_SCHEMA_VERSION, entries: {} };
+    }
+    return cache;
+  } catch {
+    return { schemaVersion: CACHE_SCHEMA_VERSION, entries: {} };
+  }
+}
+
+function saveAnalysisCache(cache) {
+  try {
+    const cacheDir = getCacheDir();
+    fs.mkdirSync(cacheDir, { recursive: true });
+    const cachePath = path.join(cacheDir, CACHE_FILE_NAME);
+    const tmpPath = `${cachePath}.${process.pid}.tmp`;
+    fs.writeFileSync(tmpPath, `${JSON.stringify(cache)}\n`);
+    fs.renameSync(tmpPath, cachePath);
+  } catch {
+    // Cache should never make analysis fail.
+  }
+}
+
+function getStatFingerprint(filePath) {
+  try {
+    const stat = fs.statSync(filePath);
+    return {
+      size: stat.size,
+      mtimeMs: Math.round(stat.mtimeMs),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function findPrimaryMacExecutable(appPath, metadata) {
+  const macosDir = path.join(appPath, 'Contents', 'MacOS');
+  if (metadata?.executable) {
+    const explicitPath = path.join(macosDir, metadata.executable);
+    if (fs.existsSync(explicitPath)) return explicitPath;
+  }
+
+  const inferredPath = path.join(macosDir, path.basename(appPath, '.app'));
+  if (fs.existsSync(inferredPath)) return inferredPath;
+
+  try {
+    for (const entry of fs.readdirSync(macosDir, { withFileTypes: true })) {
+      if (entry.isFile()) return path.join(macosDir, entry.name);
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
+function getCacheKey(app, includeNativeDetails) {
+  const mode = includeNativeDetails ? 'native-details' : 'fast';
+  return `${app.platform}|${mode}|${app.path}`;
+}
+
+function getAppFingerprint(app, includeNativeDetails) {
+  const metadata = app.platform === 'darwin' ? readPlistMetadata(app.path) : null;
+  const infoPlistPath = app.platform === 'darwin'
+    ? path.join(app.path, 'Contents', 'Info.plist')
+    : null;
+  const executablePath = app.platform === 'darwin'
+    ? findPrimaryMacExecutable(app.path, metadata)
+    : findPrimaryExe(app.path);
+
+  return JSON.stringify({
+    schemaVersion: CACHE_SCHEMA_VERSION,
+    platform: app.platform,
+    includeNativeDetails,
+    path: app.path,
+    bundleId: metadata?.bundleId || null,
+    version: metadata?.version || null,
+    executable: metadata?.executable || (executablePath ? path.basename(executablePath) : null),
+    infoPlist: infoPlistPath ? getStatFingerprint(infoPlistPath) : null,
+    executableFile: executablePath ? getStatFingerprint(executablePath) : null,
+  });
+}
+
+function readCachedResult(cache, app, includeNativeDetails) {
+  const key = getCacheKey(app, includeNativeDetails);
+  const fingerprint = getAppFingerprint(app, includeNativeDetails);
+  const entry = cache.entries[key];
+
+  if (!entry || entry.fingerprint !== fingerprint || !entry.result) {
+    return { key, fingerprint, result: null };
+  }
+
+  return {
+    key,
+    fingerprint,
+    result: {
+      ...entry.result,
+      path: app.path,
+      platform: app.platform,
+      sizeBytes: entry.result.sizeBytes,
+      signature: null,
+      notarization: null,
+    },
+  };
+}
+
+function writeCachedResult(cache, key, fingerprint, result) {
+  if (!result || result.stack === 'unknown') return false;
+
+  cache.entries[key] = {
+    fingerprint,
+    result: {
+      ...result,
+      signature: null,
+      notarization: null,
+    },
+  };
+
+  return true;
 }
 
 /**
@@ -305,16 +482,23 @@ function readWindowsSignature(exePath) {
 /**
  * Analyze a single application and return a complete result object.
  * @param {{ name: string, path: string, platform: string }} app
- * @param {{ includeSignature?: boolean }} [opts]
+ * @param {{ includeSignature?: boolean, includeLocalizedName?: boolean, includeNativeDetails?: boolean, sizeBytes?: number }} [opts]
  * @returns {AnalysisResult}
  */
-export function analyzeApp(app, { includeSignature = false } = {}) {
+export function analyzeApp(app, {
+  includeSignature = false,
+  includeLocalizedName = true,
+  includeNativeDetails = true,
+  sizeBytes: knownSizeBytes,
+} = {}) {
   const { name, path: appPath, platform } = app;
 
-  const detection = detectStack(appPath, platform);
+  const detection = detectStack(appPath, platform, { includeNativeDetails });
   const metadata = platform === 'darwin' ? readPlistMetadata(appPath) : null;
-  const localizedName = platform === 'darwin' ? readLocalizedDisplayName(appPath) : null;
-  const sizeBytes = getAppSize(appPath);
+  const localizedName = includeLocalizedName && platform === 'darwin'
+    ? readLocalizedDisplayName(appPath)
+    : null;
+  const sizeBytes = typeof knownSizeBytes === 'number' ? knownSizeBytes : getAppSize(appPath);
 
   let signature = null;
   let notarization = null;
@@ -347,44 +531,148 @@ export function analyzeApp(app, { includeSignature = false } = {}) {
   };
 }
 
+function createFailedResult(app) {
+  return {
+    name: app.name,
+    path: app.path,
+    platform: app.platform,
+    stack: 'unknown',
+    stackName: 'Unknown',
+    category: 'unknown',
+    confidence: 'low',
+    evidence: ['Analysis failed'],
+    color: 'gray',
+    description: 'Could not analyze this application',
+    website: null,
+    metadata: {},
+    sizeBytes: 0,
+    signature: null,
+    notarization: null,
+  };
+}
+
 /**
  * Analyze multiple apps with a progress callback.
  * @param {{ name: string, path: string, platform: string }[]} apps
  * @param {(current: number, total: number, name: string) => void} [onProgress]
- * @returns {AnalysisResult[]}
+ * @param {{ includeNativeDetails?: boolean, useCache?: boolean }} [opts]
+ * @returns {Promise<AnalysisResult[]>}
  */
-export function analyzeApps(apps, onProgress) {
-  const results = [];
+export function analyzeApps(apps, onProgress, { includeNativeDetails = false, useCache = true } = {}) {
+  if (apps.length === 0) return Promise.resolve([]);
 
-  for (let i = 0; i < apps.length; i++) {
-    const app = apps[i];
-    if (onProgress) onProgress(i + 1, apps.length, app.name);
+  const cache = useCache ? loadAnalysisCache() : null;
+  let cacheDirty = false;
+  const results = new Array(apps.length);
+  const jobs = [];
+  let completed = 0;
 
-    try {
-      results.push(analyzeApp(app));
-    } catch {
-      // Skip apps that can't be analyzed (permission denied, etc.)
-      results.push({
-        name: app.name,
-        path: app.path,
-        platform: app.platform,
-        stack: 'unknown',
-        stackName: 'Unknown',
-        category: 'unknown',
-        confidence: 'low',
-        evidence: ['Analysis failed'],
-        color: 'gray',
-        description: 'Could not analyze this application',
-        website: null,
-        metadata: {},
-        sizeBytes: 0,
-        signature: null,
-        notarization: null,
-      });
+  const complete = (id, result) => {
+    results[id] = result;
+    completed++;
+    if (onProgress) onProgress(completed, apps.length, apps[id]?.name || '');
+  };
+
+  for (let id = 0; id < apps.length; id++) {
+    const app = apps[id];
+
+    if (cache) {
+      const cached = readCachedResult(cache, app, includeNativeDetails);
+      if (cached.result) {
+        complete(id, cached.result);
+        continue;
+      }
+      jobs.push({ id, app, sizeBytes: 0, cacheKey: cached.key, fingerprint: cached.fingerprint });
+    } else {
+      jobs.push({ id, app, sizeBytes: 0, cacheKey: null, fingerprint: null });
     }
   }
 
-  return results;
+  const finish = () => {
+    if (cache && cacheDirty) saveAnalysisCache(cache);
+    return results;
+  };
+
+  if (jobs.length === 0) return Promise.resolve(finish());
+
+  const sizeMap = getAppSizes(jobs.map((job) => job.app.path));
+  for (const job of jobs) {
+    job.sizeBytes = sizeMap.get(job.app.path);
+  }
+
+  const configuredWorkers = Number.parseInt(process.env.BUILDBY_WORKERS || '', 10);
+  const workerCount = Number.isFinite(configuredWorkers) && configuredWorkers > 0
+    ? configuredWorkers
+    : 4;
+  const maxWorkers = Math.max(1, Math.min(os.cpus()?.length || 1, workerCount, jobs.length));
+
+  if (maxWorkers === 1) {
+    for (const job of jobs) {
+      try {
+        const result = analyzeApp(job.app, {
+          includeLocalizedName: false,
+          includeNativeDetails,
+          sizeBytes: job.sizeBytes,
+        });
+        complete(job.id, result);
+        if (cache && writeCachedResult(cache, job.cacheKey, job.fingerprint, result)) {
+          cacheDirty = true;
+        }
+      } catch {
+        complete(job.id, createFailedResult(job.app));
+      }
+    }
+    return Promise.resolve(finish());
+  }
+
+  return new Promise((resolve) => {
+    const workerUrl = new URL('./analyzeWorker.js', import.meta.url);
+    const workers = [];
+    let nextIndex = 0;
+
+    const finishWorkers = () => {
+      for (const worker of workers) worker.terminate();
+      resolve(finish());
+    };
+
+    const dispatch = (worker) => {
+      if (nextIndex >= jobs.length) return;
+      const job = jobs[nextIndex++];
+      worker.currentJob = job;
+      worker.postMessage({
+        id: job.id,
+        app: job.app,
+        includeNativeDetails,
+        sizeBytes: job.sizeBytes,
+      });
+    };
+
+    for (let i = 0; i < maxWorkers; i++) {
+      const worker = new Worker(workerUrl);
+      workers.push(worker);
+
+      worker.on('message', ({ id, result }) => {
+        const job = worker.currentJob;
+        complete(id, result);
+        if (cache && job && writeCachedResult(cache, job.cacheKey, job.fingerprint, result)) {
+          cacheDirty = true;
+        }
+        if (completed >= apps.length) finishWorkers();
+        else dispatch(worker);
+      });
+
+      worker.on('error', () => {
+        const job = worker.currentJob;
+        if (job && !results[job.id]) {
+          complete(job.id, createFailedResult(job.app));
+        }
+        if (completed >= apps.length) finishWorkers();
+        else dispatch(worker);
+      });
+
+      dispatch(worker);
+    }
+  });
 }
 
 /**

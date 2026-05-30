@@ -5,17 +5,23 @@ import { execFileSync } from 'child_process';
  * Checks (in order): env vars, Intl API, macOS system preferences.
  */
 function detectLocale() {
-  const envLang =
-    process.env.LANG ||
-    process.env.LC_ALL ||
-    process.env.LC_MESSAGES ||
-    process.env.LANGUAGE ||
-    '';
-  if (envLang.toLowerCase().startsWith('zh')) return 'zh';
+  const normalizeEnvLocale = (value) => {
+    const locale = (value || '').toLowerCase();
+    if (!locale || locale === 'c' || locale.startsWith('c.') || locale === 'posix') return null;
+    return locale.startsWith('zh') ? 'zh' : 'en';
+  };
+
+  for (const value of [process.env.LANGUAGE, process.env.LC_ALL, process.env.LC_MESSAGES]) {
+    const locale = normalizeEnvLocale(value);
+    if (locale) return locale;
+  }
+
+  const langLocale = normalizeEnvLocale(process.env.LANG);
+  if (langLocale === 'zh') return 'zh';
 
   try {
     const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-    if (locale.startsWith('zh')) return 'zh';
+    if (locale?.startsWith('zh')) return 'zh';
   } catch {
     // ignore
   }
@@ -75,6 +81,22 @@ const translations = {
     scan_summary: 'Scanned {total} applications',
     scan_group_stat: '({count} apps, {pct}%)',
     scan_distribution: 'Distribution:',
+    report_title: 'Desktop App Stack Report',
+    report_overview: '{count} apps · {size} scanned',
+    report_electron_footprint: 'Electron footprint',
+    report_cross_platform: 'Cross-platform apps',
+    report_largest_stack: 'Largest stack',
+    report_groups: 'Apps by stack',
+    report_profile: 'Desktop app stack profile',
+    report_metric: '{count} apps · {pct}% · {size}',
+    report_more: '… {count} more, use {command} to view all',
+    report_profile_summary: 'Scanned {count} desktop apps, using {size}, awarded the {title} title',
+    report_title_no_electron: 'Native Minimalist',
+    report_title_electron_light: 'Chromium Tourist',
+    report_title_electron_medium: 'Electron Collector',
+    report_title_electron_heavy: 'Chromium Tenant Manager',
+    report_title_cross_platform: 'Cross-platform Collector',
+    report_title_native: 'Native Loyalist',
 
     // ── filtered list view ───────────────────────────────────────────────────
     filter_no_result: 'No {stack} apps found.',
@@ -102,7 +124,7 @@ const translations = {
     spinner_no_apps: 'No applications found.',
 
     // ── warnings / errors ────────────────────────────────────────────────────
-    warn_use_scan: 'Try using --scan to see all installed apps.',
+    warn_use_scan: 'Try using --all to see all installed apps.',
     warn_platform: 'Make sure you are running on macOS or Windows.',
     err_unsupported_platform: 'Unsupported platform: {platform}. Only macOS and Windows are supported.',
     err_path_not_found: 'Path not found: {path}',
@@ -110,8 +132,10 @@ const translations = {
     // ── commander descriptions ────────────────────────────────────────────────
     cmd_description: 'Detect the technology stack of desktop applications',
     cmd_help: 'Show help',
-    cmd_scan: 'Scan all installed apps and group by tech stack',
+    cmd_all: 'Show all installed apps grouped by tech stack',
+    cmd_scan_legacy: 'Legacy alias for --all',
     cmd_path: 'Specify a custom directory to scan',
+    cmd_no_cache: 'Disable the local analysis cache',
     cmd_filter: 'Show all apps built with {name}',
     cmd_appname: 'Name of the app to inspect (supports fuzzy match)',
 
@@ -166,6 +190,22 @@ const translations = {
     scan_summary: '已扫描 {total} 个应用',
     scan_group_stat: '（{count} 个应用，{pct}%）',
     scan_distribution: '技术栈分布：',
+    report_title: '桌面应用技术栈报告',
+    report_overview: '已扫描 {count} 个应用 · 共 {size}',
+    report_electron_footprint: 'Electron 占用',
+    report_cross_platform: '跨平台应用',
+    report_largest_stack: '最大技术栈',
+    report_groups: '按技术栈查看应用',
+    report_profile: '桌面应用技术栈画像',
+    report_metric: '{count} 个 · {pct}% · {size}',
+    report_more: '… 还有 {count} 个，使用 {command} 查看全部',
+    report_profile_summary: '共检测 {count} 个桌面应用，占用 {size}，荣获 {title} 称号',
+    report_title_no_electron: '原生极简派',
+    report_title_electron_light: 'Chromium 观光客',
+    report_title_electron_medium: 'Electron 收藏家',
+    report_title_electron_heavy: 'Chromium 包租公',
+    report_title_cross_platform: '跨平台收集者',
+    report_title_native: '原生技术守门人',
 
     // ── filtered list view ───────────────────────────────────────────────────
     filter_no_result: '未找到 {stack} 应用。',
@@ -193,7 +233,7 @@ const translations = {
     spinner_no_apps: '未找到任何应用。',
 
     // ── warnings / errors ────────────────────────────────────────────────────
-    warn_use_scan: '可使用 --scan 查看所有已安装的应用。',
+    warn_use_scan: '可使用 --all 查看所有已安装的应用。',
     warn_platform: '请确认当前系统为 macOS 或 Windows。',
     err_unsupported_platform: '不支持的平台：{platform}，仅支持 macOS 和 Windows。',
     err_path_not_found: '路径不存在：{path}',
@@ -201,8 +241,10 @@ const translations = {
     // ── commander descriptions ────────────────────────────────────────────────
     cmd_description: '检测桌面应用的技术栈',
     cmd_help: '显示帮助信息',
-    cmd_scan: '扫描所有已安装应用并按技术栈分组展示',
+    cmd_all: '查看所有已安装应用，并按技术栈分组展示',
+    cmd_scan_legacy: '--all 的兼容别名',
     cmd_path: '指定要扫描的目录路径',
+    cmd_no_cache: '禁用本地分析缓存',
     cmd_filter: '显示所有使用 {name} 构建的应用',
     cmd_appname: '要查询的应用名称（支持模糊匹配）',
 

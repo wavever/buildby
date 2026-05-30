@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { execFileSync } from 'child_process';
+import { execCached } from '../commandCache.js';
 
 export const meta = {
   id: 'wxwidgets',
@@ -29,9 +29,43 @@ export function detect(appPath, platform) {
 
   if (platform === 'darwin') {
     const macosDir = path.join(appPath, 'Contents', 'MacOS');
+    const frameworksDir = path.join(appPath, 'Contents', 'Frameworks');
     const resourcesDir = path.join(appPath, 'Contents', 'Resources');
 
-    // 1) 通过 otool -L 查看主二进制是否链接 wx 相关 dylib
+    // 1) Cheap package-level signatures first. This catches common bundles
+    // without spawning otool for every native-looking app.
+    try {
+      const items = fs.readdirSync(frameworksDir);
+      const wxLibraries = items.filter((item) => {
+        const lower = item.toLowerCase();
+        return /^libwx.*\.dylib$/.test(lower) || /^wx/.test(lower);
+      });
+      if (wxLibraries.length > 0) {
+        evidence.push(`Frameworks contains wx* libraries (${wxLibraries.slice(0, 3).join(', ')})`);
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      const items = fs.readdirSync(resourcesDir);
+      const wxResources = items.filter((item) => item.toLowerCase().startsWith('wx'));
+      if (wxResources.length > 0) {
+        evidence.push(`Resources contains wx* assets (${wxResources.slice(0, 3).join(', ')})`);
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2) 通过 otool -L 查看主二进制是否链接 wx 相关 dylib
+    if (evidence.length > 0) {
+      return {
+        ...meta,
+        confidence: evidence.length >= 2 ? 'high' : 'medium',
+        evidence,
+      };
+    }
+
     try {
       const binaries = fs.readdirSync(macosDir);
       for (const bin of binaries) {
@@ -43,10 +77,10 @@ export function detect(appPath, platform) {
         if (bin !== path.basename(appPath, '.app')) continue;
 
         try {
-          const output = execFileSync('otool', ['-L', binPath], {
+          const output = execCached('otool', ['-L', binPath], {
             timeout: 3000,
             maxBuffer: 256 * 1024,
-          }).toString();
+          });
 
           if (output.match(/libwx.*\.dylib/)) {
             evidence.push('Links wxWidgets dynamic library (libwx*.dylib)');
@@ -55,17 +89,6 @@ export function detect(appPath, platform) {
           // ignore otool errors
         }
         break;
-      }
-    } catch {
-      // ignore
-    }
-
-    // 2) Resources 下存在明显 wx 前缀的资源目录/文件（很弱，只做加分）
-    try {
-      const items = fs.readdirSync(resourcesDir);
-      const wxResources = items.filter((item) => item.toLowerCase().startsWith('wx'));
-      if (wxResources.length > 0) {
-        evidence.push(`Resources contains wx* assets (${wxResources.slice(0, 3).join(', ')})`);
       }
     } catch {
       // ignore
@@ -100,4 +123,3 @@ export function detect(appPath, platform) {
     evidence,
   };
 }
-

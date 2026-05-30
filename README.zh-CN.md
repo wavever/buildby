@@ -99,30 +99,78 @@ buildby "clash verge"
     强化运行时： ✓ 是
 ```
 
-> **签名与公证** 部分仅在单应用查看时输出（`buildby <name>` 与 `--path`）。`--scan` 与 `--<stack>` 模式为了保证批量扫描速度，会跳过这一部分。
+> **签名与公证** 部分仅在单应用查看时输出（`buildby <name>` 与 `--path`）。`--all` 与 `--<stack>` 模式为了保证批量扫描速度，会跳过这一部分。
 
 #### 扫描所有已安装应用
 
 ```bash
-buildby --scan
+buildby --all
+buildby -a
 ```
 
-会扫描 `/Applications`（macOS）或 `Program Files`（Windows）等目录下的所有桌面应用，按技术栈分组，并展示“技术栈分布”统计条形图。
+会扫描 `/Applications`（macOS）或 `Program Files`（Windows）等目录下的所有桌面应用，按技术栈分组，并展示适合截图分享的“桌面应用技术栈画像”。
+
+> `--scan` 仍然保留为 `--all` 的兼容别名。
+
+批量扫描会使用本地分析缓存。如果应用版本与主可执行文件指纹没有变化，BuildBy 会直接复用上一次分析结论，重复扫描几乎是瞬时完成。
+
+```bash
+buildby --all --no-cache   # 强制重新分析
+```
+
+#### 配置文件
+
+BuildBy 会在首次运行时自动创建默认 JSON 配置文件，之后运行时会读取它：
+
+- macOS：`~/.buildby/config.json`
+- Windows：`%APPDATA%\buildby\config.json`
+- Linux / 其他：`$XDG_CONFIG_HOME/buildby/config.json` 或 `~/.config/buildby/config.json`
+
+也可以通过 `BUILDBY_CONFIG=/path/to/config.json` 指定自定义配置文件；如果该文件不存在，BuildBy 会自动写入默认值。
+
+```json
+{
+  "cache": true,
+  "excludeApps": [
+    "Xcode",
+    "com.apple.Safari",
+    "/Applications/VMware Fusion.app"
+  ]
+}
+```
+
+`cache: false` 会默认禁用分析缓存。`excludeApps` 会让匹配的应用不参与 `--all` 与按技术栈过滤扫描；条目可以写应用名、Bundle ID 或完整路径。单应用查询仍然可以查看这些被排除的应用。
+
+#### 输出语言
+
+BuildBy 默认会跟随终端或系统语言。无需修改系统语言，也可以临时展示英文输出：
+
+```bash
+LC_ALL=en_US.UTF-8 buildby -a
+```
+
+也可以创建一个 alias：
+
+```bash
+alias buildby-en='LC_ALL=en_US.UTF-8 buildby'
+```
 
 #### 按技术栈过滤
 
 ```bash
-buildby --electron      # 所有 Electron 应用
-buildby --flutter       # 所有 Flutter 应用
-buildby --tauri         # 所有 Tauri 应用
-buildby --qt            # 所有 Qt 应用
-buildby --wxwidgets     # 所有 wxWidgets/wxPython 应用
-buildby --jvm           # 所有 JVM 应用（Java/Kotlin/Scala）
-buildby --cef           # 所有 CEF (Chromium Embedded Framework) 应用
-buildby --dotnet        # 所有 .NET / MAUI / WPF 应用
-buildby --nwjs          # 所有 NW.js 应用
-buildby --reactnative   # 所有 React Native 桌面应用
-buildby --native        # 所有原生应用（Swift/ObjC/Win32）
+buildby -e     # 所有 Electron 应用（--electron）
+buildby -f     # 所有 Flutter 应用（--flutter）
+buildby -t     # 所有 Tauri 应用（--tauri）
+buildby -q     # 所有 Qt 应用（--qt）
+buildby -w     # 所有 wxWidgets/wxPython 应用（--wxwidgets）
+buildby -j     # 所有 JVM 应用（--jvm）
+buildby -c     # 所有 CEF 应用（--cef）
+buildby -d     # 所有 .NET / MAUI / WPF 应用（--dotnet）
+buildby -b     # 所有 Chromium 应用（--chromium）
+buildby -W     # 所有 NW.js 应用（--nwjs）
+buildby -r     # 所有 React Native 桌面应用（--reactnative）
+buildby -u     # 所有 Unity 应用（--unity）
+buildby -n     # 所有原生应用（--native）
 ```
 
 #### 指定自定义路径

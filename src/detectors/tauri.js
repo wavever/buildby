@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { execFileSync } from 'child_process';
+import { execCached } from '../commandCache.js';
 
 export const meta = {
   id: 'tauri',
@@ -16,15 +16,11 @@ export const meta = {
  * This is very fast (~20ms) and reliable for detecting Tauri apps.
  */
 function linksWebKit(binaryPath) {
-  try {
-    const output = execFileSync('otool', ['-L', binaryPath], {
-      timeout: 3000,
-      maxBuffer: 256 * 1024,
-    }).toString();
-    return output.includes('WebKit.framework');
-  } catch {
-    return false;
-  }
+  const output = execCached('otool', ['-L', binaryPath], {
+    timeout: 3000,
+    maxBuffer: 256 * 1024,
+  });
+  return output.includes('WebKit.framework');
 }
 
 /**
@@ -33,20 +29,16 @@ function linksWebKit(binaryPath) {
  * so we can't rely on external index.html alone.
  */
 function containsTauriSignature(binaryPath) {
-  try {
-    const output = execFileSync('strings', ['-n', '12', binaryPath], {
-      timeout: 5000,
-      maxBuffer: 2 * 1024 * 1024,
-    }).toString();
-    const markers = [
-      'tauri-runtime-wry',
-      'tauri::',
-      '/tauri-',
-    ];
-    return markers.some((m) => output.includes(m));
-  } catch {
-    return false;
-  }
+  const output = execCached('strings', ['-n', '12', binaryPath], {
+    timeout: 5000,
+    maxBuffer: 2 * 1024 * 1024,
+  });
+  const markers = [
+    'tauri-runtime-wry',
+    'tauri::',
+    '/tauri-',
+  ];
+  return markers.some((m) => output.includes(m));
 }
 
 export function detect(appPath, platform) {
@@ -119,13 +111,20 @@ export function detect(appPath, platform) {
         const stat = fs.statSync(binPath);
         if (!stat.isFile()) continue;
 
-        if (linksWebKit(binPath)) {
+        const hasWebKitLink = linksWebKit(binPath);
+        if (hasWebKitLink) {
           evidence.push('Links system WebKit.framework (WKWebView)');
         }
 
         // Tauri v2 embeds web assets into the binary — no external index.html.
         // Fall back to scanning for Tauri crate strings inside the binary.
-        if (containsTauriSignature(binPath)) {
+        const shouldScanBinary =
+          hasWebKitLink &&
+          !hasHeavyFramework &&
+          // `strings` on huge app binaries is expensive. Most Tauri bundles are
+          // compact single binaries, so keep this fallback focused.
+          stat.size <= 160 * 1024 * 1024;
+        if (shouldScanBinary && containsTauriSignature(binPath)) {
           evidence.push('Tauri framework signature in binary');
         }
 

@@ -15,6 +15,7 @@ import { detect as detectNative, meta as nativeMeta } from './native.js';
 // Detection priority order: most distinctive signatures first.
 // Unity must precede .NET (Unity bundles Mono assemblies that could trigger .NET).
 // Chromium must follow Electron/CEF/NW.js (they are more specific Chromium wrappers).
+// wxWidgets is intentionally late because macOS detection may call otool.
 const DETECTORS = [
   { meta: electronMeta, detect: detectElectron },
   { meta: flutterMeta, detect: detectFlutter },
@@ -23,11 +24,11 @@ const DETECTORS = [
   { meta: chromiumMeta, detect: detectChromium },
   { meta: reactnativeMeta, detect: detectReactNative },
   { meta: qtMeta, detect: detectQt },
-  { meta: wxwidgetsMeta, detect: detectWxWidgets },
   { meta: unityMeta, detect: detectUnity },
   { meta: jvmMeta, detect: detectJVM },
   { meta: dotnetMeta, detect: detectDotNet },
   { meta: tauriMeta, detect: detectTauri },
+  { meta: wxwidgetsMeta, detect: detectWxWidgets },
   { meta: nativeMeta, detect: detectNative }, // always last - fallback
 ];
 
@@ -53,9 +54,9 @@ export const ALL_STACK_METAS = [
  * @param {string} platform - 'darwin' | 'win32'
  * @returns {object} Detection result
  */
-export function detectStack(appPath, platform) {
+export function detectStack(appPath, platform, options = {}) {
   for (const { detect } of DETECTORS) {
-    const result = detect(appPath, platform);
+    const result = detect(appPath, platform, options);
     if (result) return result;
   }
   // Should never reach here since native.js always returns a result

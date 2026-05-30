@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { execFileSync } from 'child_process';
+import { execCached } from '../commandCache.js';
 
 export const meta = {
   id: 'native',
@@ -15,14 +15,10 @@ export const meta = {
  * Run otool -L on a Mach-O binary and return the raw output.
  */
 function getLinkedLibraries(executablePath) {
-  try {
-    return execFileSync('otool', ['-L', executablePath], {
-      timeout: 3000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).toString();
-  } catch {
-    return '';
-  }
+  return execCached('otool', ['-L', executablePath], {
+    timeout: 3000,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
 }
 
 /**
@@ -154,8 +150,16 @@ function detectMacOSDetails(appPath) {
   return { name, evidence };
 }
 
-export function detect(appPath, platform) {
+export function detect(appPath, platform, { includeNativeDetails = true } = {}) {
   if (platform === 'darwin') {
+    if (!includeNativeDetails) {
+      return {
+        ...meta,
+        confidence: 'medium',
+        evidence: ['No cross-platform framework detected'],
+      };
+    }
+
     const { name, evidence } = detectMacOSDetails(appPath);
     return {
       ...meta,

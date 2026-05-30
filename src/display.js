@@ -1,10 +1,26 @@
 import chalk from 'chalk';
-import Table from 'cli-table3';
+import stringWidth from 'string-width';
 import { t, stackDesc } from './i18n.js';
 import { formatSize } from './analyzer.js';
 import { ALL_STACK_METAS } from './detectors/index.js';
 
 const META_NAME_MAP = new Map(ALL_STACK_METAS.map((m) => [m.id, m.name]));
+const STACK_FILTER_FLAGS = {
+  electron: '-e',
+  flutter: '-f',
+  cef: '-c',
+  nwjs: '-W',
+  chromium: '-b',
+  reactnative: '-r',
+  qt: '-q',
+  wxwidgets: '-w',
+  unity: '-u',
+  jvm: '-j',
+  dotnet: '-d',
+  tauri: '-t',
+  native: '-n',
+};
+const GROUP_PREVIEW_LIMIT = 8;
 
 // Map stack id -> chalk color function
 const STACK_COLORS = {
@@ -172,9 +188,7 @@ export function printAppDetail(result) {
  */
 export function printGroupedResults(groups, allResults) {
   const total = allResults.length;
-
-  console.log();
-  console.log(chalk.bold(`  ${t('scan_summary', { total: chalk.cyan(total) })}\n`));
+  const totalSize = allResults.reduce((sum, app) => sum + (app.sizeBytes || 0), 0);
 
   // Sort groups: cross-platform first (by count desc), then native
   const sortedGroups = [...groups.entries()].sort((a, b) => {
@@ -184,6 +198,9 @@ export function printGroupedResults(groups, allResults) {
     if (!aIsNative && bIsNative) return -1;
     return b[1].length - a[1].length;
   });
+
+  printReportHeader(sortedGroups, total, totalSize);
+  console.log(chalk.bold(`  ${t('report_groups')}\n`));
 
   for (const [stackId, apps] of sortedGroups) {
     if (apps.length === 0) continue;
@@ -199,41 +216,42 @@ export function printGroupedResults(groups, allResults) {
     console.log(`  ${icon} ${colorFn.bold(stackName)} ${chalk.dim(stat)}${sizeStr}`);
 
     const showSubTech = stackId === 'native';
-    const table = new Table({
-      chars: {
-        top: '', 'top-mid': '', 'top-left': '', 'top-right': '',
-        bottom: '', 'bottom-mid': '', 'bottom-left': '', 'bottom-right': '',
-        left: '    ', 'left-mid': '', mid: '', 'mid-mid': '',
-        right: '', 'right-mid': '', middle: '  ',
-      },
-      style: { 'padding-left': 0, 'padding-right': 0, head: [], border: [] },
-      colWidths: showSubTech ? [26, 10, 24, 22] : [32, 12, 38],
-    });
+    const widths = showSubTech
+      ? { app: 30, size: 10, tech: 26 }
+      : { app: 36, size: 10 };
 
-    for (const app of apps) {
+    const sortedApps = [...apps].sort((a, b) => (b.sizeBytes || 0) - (a.sizeBytes || 0));
+
+    for (const app of sortedApps.slice(0, GROUP_PREVIEW_LIMIT)) {
+      const appName = truncateByWidth(app.name, widths.app);
+      const size = formatSize(app.sizeBytes);
       if (showSubTech) {
-        const subTech = extractSubTech(app.stackName);
-        table.push([
-          colorFn(truncate(app.name, 24)),
-          chalk.dim(formatSize(app.sizeBytes)),
-          chalk.cyan(truncate(subTech, 22)),
-          chalk.dim(truncate(app.path, 20)),
-        ]);
+        const subTech = truncateByWidth(extractSubTech(app.stackName), widths.tech);
+        console.log(
+          `    ${colorFn(padCell(appName, widths.app))}  ` +
+          `${chalk.dim(padCell(size, widths.size))}  ` +
+          `${chalk.cyan(subTech)}`
+        );
       } else {
-        table.push([
-          colorFn(truncate(app.name, 30)),
-          chalk.dim(formatSize(app.sizeBytes)),
-          chalk.dim(truncate(app.path, 36)),
-        ]);
+        console.log(
+          `    ${colorFn(padCell(appName, widths.app))}  ` +
+          `${chalk.dim(size)}`
+        );
       }
     }
 
-    console.log(table.toString());
+    if (sortedApps.length > GROUP_PREVIEW_LIMIT) {
+      const command = `buildby ${STACK_FILTER_FLAGS[stackId] || `--${stackId}`}`;
+      console.log(`    ${chalk.dim(t('report_more', {
+        count: sortedApps.length - GROUP_PREVIEW_LIMIT,
+        command,
+      }))}`);
+    }
+
     console.log();
   }
 
-  // Summary bar chart
-  printSummaryBar(sortedGroups, total);
+  printSummaryBar(sortedGroups, total, totalSize);
 }
 
 /**
@@ -259,65 +277,73 @@ export function printFilteredResults(results, stackId) {
   console.log();
   console.log(chalk.bold(`  ${title}`) + chalk.dim(` ${found}\n`));
 
-  const head = showSubTech
-    ? [
-        chalk.bold(t('table_head_app')),
-        chalk.bold(t('table_head_tech')),
-        chalk.bold(t('table_head_size')),
-        chalk.bold(t('table_head_path')),
-      ]
-    : [
-        chalk.bold(t('table_head_app')),
-        chalk.bold(t('table_head_version')),
-        chalk.bold(t('table_head_size')),
-        chalk.bold(t('table_head_path')),
-      ];
+  const widths = showSubTech
+    ? { app: 24, detail: 24, size: 10, id: 38 }
+    : { app: 28, detail: 12, size: 10, id: 42 };
 
-  const table = new Table({
-    head,
-    chars: {
-      top: '─', 'top-mid': '┬', 'top-left': '  ┌', 'top-right': '┐',
-      bottom: '─', 'bottom-mid': '┴', 'bottom-left': '  └', 'bottom-right': '┘',
-      left: '  │', 'left-mid': '  ├', mid: '─', 'mid-mid': '┼',
-      right: '│', 'right-mid': '┤', middle: ' │ ',
-    },
-    style: { head: [], border: [], 'padding-left': 1, 'padding-right': 1 },
-    colWidths: showSubTech ? [22, 22, 10, 32] : [26, 10, 10, 40],
-  });
+  const detailHead = showSubTech ? t('table_head_tech') : t('table_head_version');
+  console.log(
+    `  ${chalk.bold(padCell(t('table_head_app'), widths.app))}  ` +
+    `${chalk.bold(padCell(detailHead, widths.detail))}  ` +
+    `${chalk.bold(padCell(t('table_head_size'), widths.size))}  ` +
+    `${chalk.bold(t('table_head_path'))}`
+  );
+  console.log(`  ${chalk.dim('─'.repeat(widths.app + widths.detail + widths.size + widths.id + 6))}`);
 
-  for (const app of results.sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const app of [...results].sort((a, b) => a.name.localeCompare(b.name))) {
+    const appName = truncateByWidth(app.name, widths.app);
+    const size = formatSize(app.sizeBytes);
+    const idOrPath = app.metadata?.bundleId || app.path;
+
     if (showSubTech) {
-      table.push([
-        colorFn(truncate(app.name, 19)),
-        chalk.cyan(truncate(extractSubTech(app.stackName), 20)),
-        chalk.dim(formatSize(app.sizeBytes)),
-        chalk.dim(app.metadata?.bundleId || truncate(app.path, 30)),
-      ]);
+      const detail = truncateByWidth(extractSubTech(app.stackName), widths.detail);
+      console.log(
+        `  ${colorFn(padCell(appName, widths.app))}  ` +
+        `${chalk.cyan(padCell(detail, widths.detail))}  ` +
+        `${chalk.dim(padCell(size, widths.size))}  ` +
+        `${chalk.dim(truncateByWidth(idOrPath, widths.id))}`
+      );
     } else {
-      table.push([
-        colorFn(truncate(app.name, 23)),
-        chalk.dim(app.metadata?.version || '—'),
-        chalk.dim(formatSize(app.sizeBytes)),
-        chalk.dim(app.metadata?.bundleId || truncate(app.path, 38)),
-      ]);
+      const detail = truncateByWidth(app.metadata?.version || '—', widths.detail);
+      console.log(
+        `  ${colorFn(padCell(appName, widths.app))}  ` +
+        `${chalk.dim(padCell(detail, widths.detail))}  ` +
+        `${chalk.dim(padCell(size, widths.size))}  ` +
+        `${chalk.dim(truncateByWidth(idOrPath, widths.id))}`
+      );
     }
   }
-
-  console.log(table.toString());
   console.log();
 }
 
 /**
  * Print a summary bar chart of tech stacks with size info.
  */
-function printSummaryBar(sortedGroups, total) {
-  console.log(chalk.bold(`  ${t('scan_distribution')}\n`));
+function printSummaryBar(sortedGroups, total, grandTotal) {
+  console.log(`  ${chalk.dim('─'.repeat(72))}\n`);
   const BAR_WIDTH = 28;
+  const electronApps = sortedGroups.find(([stackId]) => stackId === 'electron')?.[1] || [];
+  const electronSize = electronApps.reduce((s, a) => s + (a.sizeBytes || 0), 0);
+  const crossPlatform = sortedGroups
+    .filter(([stackId]) => stackId !== 'native' && stackId !== 'unknown')
+    .reduce((acc, [, apps]) => ({
+      count: acc.count + apps.length,
+      size: acc.size + apps.reduce((s, a) => s + (a.sizeBytes || 0), 0),
+    }), { count: 0, size: 0 });
+  const title = pickProfileTitle({
+    total,
+    totalSize: grandTotal,
+    electronCount: electronApps.length,
+    electronSize,
+    crossPlatformCount: crossPlatform.count,
+  });
 
-  let grandTotal = 0;
-  for (const [, apps] of sortedGroups) {
-    grandTotal += apps.reduce((s, a) => s + (a.sizeBytes || 0), 0);
-  }
+  console.log(`  ${chalk.dim(t('report_profile_summary', {
+    count: total,
+    size: chalk.cyan(formatSize(grandTotal)),
+    title: chalk.cyan(`「${title}」`),
+  }))}`);
+  console.log();
 
   for (const [stackId, apps] of sortedGroups) {
     if (apps.length === 0) continue;
@@ -336,15 +362,63 @@ function printSummaryBar(sortedGroups, total) {
     );
   }
 
-  if (grandTotal > 0) {
-    console.log();
-    console.log(`  ${chalk.dim('─'.repeat(60))}`);
-    console.log(
-      `  ${chalk.bold(t('label_size'))} ${chalk.cyan(formatSize(grandTotal))}` +
-      chalk.dim(`  (${total} apps)`)
-    );
-  }
   console.log();
+}
+
+/**
+ * Print the shareable report header for --all.
+ */
+function printReportHeader(sortedGroups, total, totalSize) {
+  const groupStats = sortedGroups
+    .filter(([, apps]) => apps.length > 0)
+    .map(([stackId, apps]) => {
+      const size = apps.reduce((sum, app) => sum + (app.sizeBytes || 0), 0);
+      return { stackId, apps, count: apps.length, size };
+    });
+
+  const electron = groupStats.find((g) => g.stackId === 'electron') || { count: 0, size: 0 };
+  const crossPlatform = groupStats
+    .filter((g) => g.stackId !== 'native' && g.stackId !== 'unknown')
+    .reduce((acc, g) => ({
+      count: acc.count + g.count,
+      size: acc.size + g.size,
+    }), { count: 0, size: 0 });
+  const largest = groupStats.reduce((best, current) => (
+    !best || current.size > best.size ? current : best
+  ), null);
+  const largestName = largest ? (META_NAME_MAP.get(largest.stackId) || largest.stackId) : '—';
+  const largestIcon = largest ? (STACK_ICONS[largest.stackId] || '•') : '•';
+  const largestColor = largest ? (STACK_COLORS[largest.stackId] || chalk.white) : chalk.white;
+
+  console.log();
+  console.log(chalk.bold(`  ${t('report_title')}`));
+  console.log(chalk.dim(`  ${t('report_overview', { count: total, size: formatSize(totalSize) })}`));
+  console.log();
+  console.log(`  ${chalk.cyan('◇')} ${chalk.bold(t('report_cross_platform'))}  ${formatMetric(crossPlatform.count, total, crossPlatform.size)}`);
+  console.log(`  ${largestIcon} ${chalk.bold(t('report_largest_stack'))}  ${largestColor(largestName)} ${chalk.dim(`· ${formatSize(largest?.size || 0)}`)}`);
+  console.log();
+}
+
+function formatMetric(count, total, size) {
+  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+  return t('report_metric', {
+    count: chalk.bold(count),
+    pct,
+    size: chalk.cyan(formatSize(size)),
+  });
+}
+
+function pickProfileTitle({ total, totalSize, electronCount, electronSize, crossPlatformCount }) {
+  const electronSizeRatio = totalSize > 0 ? electronSize / totalSize : 0;
+  const electronCountRatio = total > 0 ? electronCount / total : 0;
+  const crossPlatformRatio = total > 0 ? crossPlatformCount / total : 0;
+
+  if (electronCount === 0) return t('report_title_no_electron');
+  if (electronSizeRatio >= 0.35 || electronCountRatio >= 0.35) return t('report_title_electron_heavy');
+  if (electronSizeRatio >= 0.2 || electronCountRatio >= 0.2) return t('report_title_electron_medium');
+  if (crossPlatformRatio >= 0.5) return t('report_title_cross_platform');
+  if (electronCountRatio < 0.1) return t('report_title_electron_light');
+  return t('report_title_native');
 }
 
 /**
@@ -376,4 +450,27 @@ function extractSubTech(stackName) {
 function truncate(str, max) {
   if (!str) return '';
   return str.length > max ? str.slice(0, max - 1) + '…' : str;
+}
+
+/**
+ * Truncate a string by display width, accounting for CJK and emoji.
+ */
+function truncateByWidth(value, maxWidth) {
+  const str = String(value || '');
+  if (stringWidth(str) <= maxWidth) return str;
+
+  let out = '';
+  for (const char of str) {
+    if (stringWidth(out + char + '…') > maxWidth) break;
+    out += char;
+  }
+  return out + '…';
+}
+
+/**
+ * Pad a string to a display width, accounting for CJK and emoji.
+ */
+function padCell(value, width) {
+  const str = truncateByWidth(value, width);
+  return str + ' '.repeat(Math.max(0, width - stringWidth(str)));
 }

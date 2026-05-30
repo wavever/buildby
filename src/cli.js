@@ -1,4 +1,4 @@
-import { program } from 'commander';
+import { Option, program } from 'commander';
 import ora from 'ora';
 import { createRequire } from 'module';
 import { findAppsByName, scanAllApps } from './scanner.js';
@@ -12,9 +12,26 @@ import {
 } from './display.js';
 import { ALL_STACK_METAS } from './detectors/index.js';
 import { t } from './i18n.js';
+import { loadConfig } from './config.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json');
+
+const STACK_SHORT_FLAGS = {
+  electron: 'e',
+  flutter: 'f',
+  cef: 'c',
+  nwjs: 'W',
+  chromium: 'b',
+  reactnative: 'r',
+  qt: 'q',
+  wxwidgets: 'w',
+  unity: 'u',
+  jvm: 'j',
+  dotnet: 'd',
+  tauri: 't',
+  native: 'n',
+};
 
 export function run() {
   program
@@ -23,14 +40,18 @@ export function run() {
     .version(pkg.version, '-v, --version')
     .helpOption('-h, --help', t('cmd_help'));
 
-  // ─── buildby --scan ────────────────────────────────────────────────────────
+  // ─── buildby --all / -a ────────────────────────────────────────────────────
   program
-    .option('--scan', t('cmd_scan'))
-    .option('--path <dir>', t('cmd_path'));
+    .option('-a, --all', t('cmd_all'))
+    .addOption(new Option('--scan', t('cmd_scan_legacy')).hideHelp())
+    .option('--path <dir>', t('cmd_path'))
+    .option('--no-cache', t('cmd_no_cache'));
 
   // ─── buildby --<stack> filter flags ───────────────────────────────────────
   for (const meta of ALL_STACK_METAS) {
-    program.option(`--${meta.id}`, t('cmd_filter', { name: meta.name }));
+    const shortFlag = STACK_SHORT_FLAGS[meta.id];
+    const flags = shortFlag ? `-${shortFlag}, --${meta.id}` : `--${meta.id}`;
+    program.option(flags, t('cmd_filter', { name: meta.name }));
   }
 
   // ─── buildby <appname> ────────────────────────────────────────────────────
@@ -38,6 +59,11 @@ export function run() {
 
   program.action(async (appname, opts) => {
     const platform = process.platform;
+    const config = loadConfig();
+    const runtimeOpts = {
+      ...opts,
+      cache: config.cache && opts.cache !== false,
+    };
 
     if (platform !== 'darwin' && platform !== 'win32') {
       printError(t('err_unsupported_platform', { platform }));
@@ -50,16 +76,16 @@ export function run() {
       return;
     }
 
-    // ── --scan: scan everything ──────────────────────────────────────────────
-    if (opts.scan) {
-      await handleScan();
+    // ── --all / --scan: scan everything ──────────────────────────────────────
+    if (opts.all || opts.scan) {
+      await handleScan(runtimeOpts);
       return;
     }
 
     // ── --<stack> filter flags ───────────────────────────────────────────────
     for (const meta of ALL_STACK_METAS) {
       if (opts[meta.id]) {
-        await handleFilterByStack(meta.id);
+        await handleFilterByStack(meta.id, runtimeOpts);
         return;
       }
     }
@@ -137,7 +163,7 @@ async function handleSinglePath(dirPath, platform) {
   }
 }
 
-async function handleScan() {
+async function handleScan(opts = {}) {
   const spinner = ora(t('spinner_scanning')).start();
 
   const apps = scanAllApps();
@@ -150,9 +176,9 @@ async function handleScan() {
 
   spinner.text = t('spinner_analyzing_n', { count: apps.length });
 
-  const results = analyzeApps(apps, (current, total) => {
+  const results = await analyzeApps(apps, (current, total) => {
     spinner.text = t('spinner_analyzing_progress', { current, total });
-  });
+  }, { includeNativeDetails: false, useCache: opts.cache });
 
   spinner.succeed(t('spinner_analyzed_n', { count: results.length }));
 
@@ -160,7 +186,7 @@ async function handleScan() {
   printGroupedResults(groups, results);
 }
 
-async function handleFilterByStack(stackId) {
+async function handleFilterByStack(stackId, opts = {}) {
   const spinner = ora(t('spinner_filter_scan', { stack: stackId })).start();
 
   const apps = scanAllApps();
@@ -172,9 +198,9 @@ async function handleFilterByStack(stackId) {
 
   spinner.text = t('spinner_analyzing_n', { count: apps.length });
 
-  const results = analyzeApps(apps, (current, total) => {
+  const results = await analyzeApps(apps, (current, total) => {
     spinner.text = t('spinner_analyzing_progress', { current, total });
-  });
+  }, { includeNativeDetails: stackId === 'native', useCache: opts.cache });
 
   spinner.succeed(t('spinner_scan_done'));
 

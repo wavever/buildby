@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { loadConfig } from './config.js';
 
 /**
  * Get all application directories for the current platform.
@@ -71,12 +72,46 @@ function listWindowsApps(dir) {
   }
 }
 
+function readMacBundleId(appPath) {
+  const plistPath = path.join(appPath, 'Contents', 'Info.plist');
+  try {
+    const content = fs.readFileSync(plistPath, 'utf8');
+    return content.match(/<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/)?.[1] || '';
+  } catch {
+    return '';
+  }
+}
+
+function normalizeMatchValue(value) {
+  return value.toLowerCase().replace(/\.app$/i, '').trim();
+}
+
+function isExcludedApp(app, excludeApps, bundleId = '') {
+  if (excludeApps.length === 0) return false;
+
+  const candidates = [
+    app.name,
+    path.basename(app.path),
+    app.path,
+    bundleId,
+  ]
+    .filter(Boolean)
+    .map(normalizeMatchValue);
+
+  return excludeApps.some((entry) => {
+    const normalizedEntry = normalizeMatchValue(entry);
+    return candidates.some((candidate) => candidate === normalizedEntry);
+  });
+}
+
 /**
  * Scan all application directories and return a flat list of app entries.
+ * @param {{ applyExclusions?: boolean }} [opts]
  * @returns {{ name: string, path: string, platform: string }[]}
  */
-export function scanAllApps() {
+export function scanAllApps({ applyExclusions = true } = {}) {
   const { paths, platform } = getAppDirectories();
+  const { excludeApps } = applyExclusions ? loadConfig() : { excludeApps: [] };
   const apps = [];
   const seen = new Set();
 
@@ -91,8 +126,14 @@ export function scanAllApps() {
       const name = platform === 'darwin'
         ? path.basename(appPath, '.app')
         : path.basename(appPath);
+      const app = { name, path: appPath, platform };
+      const bundleId = platform === 'darwin' && excludeApps.length > 0
+        ? readMacBundleId(appPath)
+        : '';
 
-      apps.push({ name, path: appPath, platform });
+      if (isExcludedApp(app, excludeApps, bundleId)) continue;
+
+      apps.push(app);
     }
   }
 
@@ -105,7 +146,7 @@ export function scanAllApps() {
  * @returns {{ name: string, path: string, platform: string }[]}
  */
 export function findAppsByName(query) {
-  const all = scanAllApps();
+  const all = scanAllApps({ applyExclusions: false });
   const lower = query.toLowerCase().replace(/\s+/g, '');
 
   // Exact match first

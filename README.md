@@ -41,7 +41,7 @@ It also surfaces **signature and notarization** details for single-app inspectio
 
 | Inspect a single app | Scan all installed apps | Filter by tech stack |
 | :---: | :---: | :---: |
-| ![](/screenshot/img-app.png) | ![](/screenshot/img-scan.png) | ![](/screenshot/img-filter.png) |
+| ![](/screenshot/img-app-en.png) | ![](/screenshot/img-scan-en.png) | ![](/screenshot/img-filter-en.png) |
 
 ## Install
 
@@ -99,29 +99,78 @@ Output example:
     Hardened Runtime: ✓ Yes
 ```
 
-> The **Signature & Notarization** section is only printed for single-app inspection (`buildby <name>` and `--path`). `--scan` and `--<stack>` skip it so batch scans stay fast.
+> The **Signature & Notarization** section is only printed for single-app inspection (`buildby <name>` and `--path`). `--all` and `--<stack>` skip it so batch scans stay fast.
 
 ### Scan all installed apps
 
 ```bash
-buildby --scan
+buildby --all
+buildby -a
 ```
 
 Scans all apps in `/Applications` (macOS) or `Program Files` (Windows) and groups them by tech stack with a distribution chart.
 
+> `--scan` is still supported as a legacy alias for `--all`.
+
+Batch scans use a local analysis cache. If an app's version and main executable fingerprint have not changed, BuildBy reuses the previous result so repeated scans are nearly instant.
+
+```bash
+buildby --all --no-cache   # Force a fresh analysis
+```
+
+### Configuration
+
+BuildBy creates a default JSON config file on first run, then reads it on later runs:
+
+- macOS: `~/.buildby/config.json`
+- Windows: `%APPDATA%\buildby\config.json`
+- Linux/other: `$XDG_CONFIG_HOME/buildby/config.json` or `~/.config/buildby/config.json`
+
+You can also point to a custom config file with `BUILDBY_CONFIG=/path/to/config.json`; BuildBy will create that file with defaults if it does not exist.
+
+```json
+{
+  "cache": true,
+  "excludeApps": [
+    "Xcode",
+    "com.apple.Safari",
+    "/Applications/VMware Fusion.app"
+  ]
+}
+```
+
+`cache: false` disables the analysis cache by default. `excludeApps` removes matching apps from `--all` and per-stack scans; entries can be app names, Bundle IDs, or full paths. Single-app inspection still works for excluded apps.
+
+### Language
+
+BuildBy follows your terminal or system language by default. To show English output without changing system language:
+
+```bash
+LC_ALL=en_US.UTF-8 buildby -a
+```
+
+You can also create an alias:
+
+```bash
+alias buildby-en='LC_ALL=en_US.UTF-8 buildby'
+```
+
 ### Filter by tech stack
 
 ```bash
-buildby --electron      # All Electron apps
-buildby --flutter       # All Flutter apps
-buildby --tauri         # All Tauri apps
-buildby --qt            # All Qt apps
-buildby --jvm           # All JVM apps (Java/Kotlin/Scala)
-buildby --cef           # All CEF apps (Chromium Embedded Framework)
-buildby --dotnet        # All .NET / MAUI / WPF apps
-buildby --nwjs          # All NW.js apps
-buildby --reactnative   # All React Native apps
-buildby --native        # All native apps (Swift/ObjC/Win32)
+buildby -e     # All Electron apps (--electron)
+buildby -f     # All Flutter apps (--flutter)
+buildby -t     # All Tauri apps (--tauri)
+buildby -q     # All Qt apps (--qt)
+buildby -j     # All JVM apps (--jvm)
+buildby -c     # All CEF apps (--cef)
+buildby -d     # All .NET / MAUI / WPF apps (--dotnet)
+buildby -b     # All Chromium apps (--chromium)
+buildby -W     # All NW.js apps (--nwjs)
+buildby -r     # All React Native apps (--reactnative)
+buildby -w     # All wxWidgets apps (--wxwidgets)
+buildby -u     # All Unity apps (--unity)
+buildby -n     # All native apps (--native)
 ```
 
 ### Inspect a custom path
