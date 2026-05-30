@@ -8,41 +8,24 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Added `buildby --all` / `buildby -a` as the primary full-scan command.
-  `--scan` remains available as a legacy alias.
-- Added short filter flags for all supported stacks, including `-e`
-  for Electron, `-f` for Flutter, `-t` for Tauri, and `-n` for Native.
-- Added a persistent analysis cache for batch scans. Apps whose version and
-  main executable fingerprint have not changed reuse previous analysis results.
+- Added `buildby --all` / `buildby -a` as the primary full-scan command, with `--scan` kept as a legacy alias.
+- Added short filter flags for all supported stacks, including `-e`, `-f`, `-t`, and `-n`.
+- Added a persistent analysis cache that reuses results when app versions and executable fingerprints are unchanged.
 - Added `--no-cache` to force a fresh batch analysis.
-- Added automatic config file creation on first run:
-
-  ```json
-  {
-    "cache": true,
-    "excludeApps": []
-  }
-  ```
-
-  On macOS the default path is `~/.buildby/config.json`.
-- Added `excludeApps` config support to skip apps from `--all` and per-stack
-  scans by app name, Bundle ID, or full path.
+- Added automatic config file creation on first run with `cache: true` and `excludeApps: []`.
+- Added `excludeApps` config support to skip apps from `--all` and per-stack scans by app name, Bundle ID, or full path.
 - Added English README screenshots.
 
 ### Changed
 
-- Redesigned the full-scan output with a more shareable desktop app stack
-  profile, including a title line and compact distribution chart.
+- Redesigned the full-scan output with a more shareable desktop app stack profile and compact distribution chart.
 - Improved table rendering for CJK, emoji, and ANSI-colored output.
-- Improved batch-scan speed with worker-based analysis, batched size reads, and
-  reduced expensive command calls.
+- Improved batch-scan speed with worker-based analysis, batched size reads, and reduced expensive command calls.
 - Batch scans skip signature and localized-name lookups to keep scans fast.
 
 ### Fixed
 
-- Fixed locale handling so neutral terminal locales such as `C.UTF-8` can still
-  fall back to the macOS system language, while explicit English locale
-  overrides work as expected.
+- Fixed locale handling so neutral terminal locales such as `C.UTF-8` fall back correctly while explicit English overrides still work.
 
 ## [1.1.0] — 2026-05-21
 

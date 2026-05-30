@@ -64,13 +64,29 @@ jobs:
           path: dist/*.tgz
           if-no-files-found: error
 
+      - name: Extract release notes
+        env:
+          TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" { capture=1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md | sed '/^[[:space:]]*$/N;/^\n$/D' > release-notes.md
+
+          if [ ! -s release-notes.md ]; then
+            echo "- Release package for ${TAG_NAME}." > release-notes.md
+          fi
+
       - name: Upload package to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         run: |
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release edit "$TAG_NAME" --notes-file release-notes.md
             gh release upload "$TAG_NAME" dist/*.tgz --clobber
           else
-            gh release create "$TAG_NAME" dist/*.tgz --title "$TAG_NAME" --generate-notes
+            gh release create "$TAG_NAME" dist/*.tgz --title "$TAG_NAME" --notes-file release-notes.md
           fi
