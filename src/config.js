@@ -7,18 +7,37 @@ const DEFAULT_CONFIG = {
   excludeApps: [],
 };
 
+const CONFIG_DIR_NAME = 'buildby';
+const CONFIG_FILE_NAME = 'config.json';
+
+function getXdgConfigPath() {
+  return path.join(
+    process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'),
+    CONFIG_DIR_NAME,
+    CONFIG_FILE_NAME,
+  );
+}
+
+function getLegacyConfigPath() {
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), '.buildby', CONFIG_FILE_NAME);
+  }
+
+  return null;
+}
+
 export function getConfigPath() {
   if (process.env.BUILDBY_CONFIG) return process.env.BUILDBY_CONFIG;
 
-  if (process.platform === 'darwin') {
-    return path.join(os.homedir(), '.buildby', 'config.json');
-  }
-
   if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'buildby', 'config.json');
+    return path.join(
+      process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'),
+      CONFIG_DIR_NAME,
+      CONFIG_FILE_NAME,
+    );
   }
 
-  return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'buildby', 'config.json');
+  return getXdgConfigPath();
 }
 
 function createDefaultConfigIfMissing(configPath) {
@@ -32,8 +51,24 @@ function createDefaultConfigIfMissing(configPath) {
   }
 }
 
+function migrateLegacyConfigIfNeeded(configPath) {
+  if (process.env.BUILDBY_CONFIG || fs.existsSync(configPath)) return configPath;
+
+  const legacyConfigPath = getLegacyConfigPath();
+  if (!legacyConfigPath || !fs.existsSync(legacyConfigPath)) return configPath;
+
+  try {
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.copyFileSync(legacyConfigPath, configPath);
+    return configPath;
+  } catch {
+    // Keep existing users' settings available even when migration is blocked.
+    return legacyConfigPath;
+  }
+}
+
 export function loadConfig() {
-  const configPath = getConfigPath();
+  const configPath = migrateLegacyConfigIfNeeded(getConfigPath());
   createDefaultConfigIfMissing(configPath);
 
   try {

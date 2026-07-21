@@ -122,9 +122,10 @@ buildby --all --no-cache   # 强制重新分析
 
 BuildBy 会在首次运行时自动创建默认 JSON 配置文件，之后运行时会读取它：
 
-- macOS：`~/.buildby/config.json`
+- macOS / Linux / 其他：`$XDG_CONFIG_HOME/buildby/config.json` 或 `~/.config/buildby/config.json`
 - Windows：`%APPDATA%\buildby\config.json`
-- Linux / 其他：`$XDG_CONFIG_HOME/buildby/config.json` 或 `~/.config/buildby/config.json`
+
+在 macOS 上，如果新路径还不存在，但旧的 `~/.buildby/config.json` 已存在，BuildBy 会自动将旧配置复制到新的 XDG 路径。
 
 也可以通过 `BUILDBY_CONFIG=/path/to/config.json` 指定自定义配置文件；如果该文件不存在，BuildBy 会自动写入默认值。
 

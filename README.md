@@ -122,9 +122,10 @@ buildby --all --no-cache   # Force a fresh analysis
 
 BuildBy creates a default JSON config file on first run, then reads it on later runs:
 
-- macOS: `~/.buildby/config.json`
+- macOS/Linux/other: `$XDG_CONFIG_HOME/buildby/config.json` or `~/.config/buildby/config.json`
 - Windows: `%APPDATA%\buildby\config.json`
-- Linux/other: `$XDG_CONFIG_HOME/buildby/config.json` or `~/.config/buildby/config.json`
+
+On macOS, existing configs from `~/.buildby/config.json` are copied to the new XDG path automatically when the new file does not exist.
 
 You can also point to a custom config file with `BUILDBY_CONFIG=/path/to/config.json`; BuildBy will create that file with defaults if it does not exist.
 
