@@ -1,0 +1,85 @@
+/* Hallmark · macrostructure: Forensic Workbench · theme: Signal Cobalt */
+:root {
+  --color-paper: oklch(96.5% 0.008 248);
+  --color-paper-2: oklch(92.5% 0.012 248);
+  --color-paper-3: oklch(86% 0.018 248);
+  --color-rule: oklch(78% 0.024 248);
+  --color-rule-strong: oklch(58% 0.035 248);
+  --color-neutral: oklch(48% 0.026 250);
+  --color-muted: oklch(37% 0.025 250);
+  --color-ink: oklch(17% 0.025 252);
+  --color-ink-2: oklch(25% 0.026 252);
+  --color-accent: oklch(55% 0.23 258);
+  --color-accent-hover: oklch(62% 0.21 258);
+  --color-accent-active: oklch(48% 0.22 258);
+  --color-accent-bright: oklch(76% 0.14 258);
+  --color-accent-ink: oklch(98% 0.006 248);
+  --color-focus: oklch(60% 0.22 258);
+  --color-focus-inverse: oklch(97% 0.006 248);
+  --color-graphite: oklch(15% 0.018 255);
+  --color-graphite-2: oklch(19% 0.022 255);
+  --color-graphite-3: oklch(23% 0.027 255);
+  --color-graphite-rule: oklch(35% 0.035 255);
+  --color-graphite-ink: oklch(95% 0.01 248);
+  --color-graphite-muted: oklch(72% 0.024 248);
+  --color-signal: oklch(73% 0.16 258);
+  --color-success: oklch(55% 0.18 150);
+  --color-error: oklch(58% 0.2 28);
+  --color-error-paper: oklch(95% 0.035 28);
+  --color-overlay: oklch(8% 0.014 255 / 0.82);
+  --color-transparent: transparent;
+
+  --font-display: "Space Grotesk", "Avenir Next", ui-sans-serif, sans-serif;
+  --font-display-cjk: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Space Grotesk", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, monospace;
+
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 9rem;
+  --space-5xl: 13rem;
+  --page-gutter: clamp(1rem, 4vw, 4.5rem);
+  --content-max: 90rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: clamp(1.05rem, 1.4vw, 1.25rem);
+  --text-lg: clamp(1.4rem, 2vw, 1.8rem);
+  --text-xl: clamp(1.75rem, 3vw, 2.6rem);
+  --text-2xl: clamp(2.25rem, 5vw, 4.2rem);
+  --text-display: clamp(3rem, 7.3vw, 7.25rem);
+  --text-display-small: clamp(2.55rem, 5.7vw, 5.6rem);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-medium: 520ms;
+  --dur-long: 820ms;
+
+  --rule-thin: 1px;
+  --rule-heavy: 2px;
+  --rule-input-outline: 2px;
+  --rule-focus: 3px;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --control-height: 2.75rem;
+  --banner-height: 4rem;
+  --shadow-stage: 0 2rem 6rem oklch(4% 0.015 255 / 0.45);
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-sticky-nav: 210;
+  --z-modal: 400;
+  --z-tooltip: 600;
+}
