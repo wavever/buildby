@@ -87,8 +87,44 @@
                   <span><i aria-hidden="true"></i><span data-i18n="liveInspection">Live inspection</span></span>
                   <code>SESSION / 01</code>
                 </div>
-                <div class="inspection-viewport">
-                  <img src="screenshot/img-app-en.png" width="1124" height="768" alt="buildby identifying Codex as an Electron app and displaying its signature and notarization details" fetchpriority="high" data-src-en="screenshot/img-app-en.png" data-src-zh="screenshot/img-app.png" data-width-en="1124" data-height-en="768" data-width-zh="814" data-height-zh="854" data-i18n-alt="heroImageAlt">
+                <div class="inspection-viewport terminal-surface terminal-hero" data-terminal role="img" aria-label="Animated terminal running buildby Codex and reporting the detected framework, evidence, signature, and notarization status" data-i18n-aria-label="heroTerminalAria">
+                  <div class="terminal-command" data-terminal-line style="--line: 0">
+                    <span class="terminal-prompt" aria-hidden="true">›</span>
+                    <code>buildby Codex</code>
+                    <span class="terminal-cursor" aria-hidden="true"></span>
+                  </div>
+                  <div class="terminal-output">
+                    <p class="terminal-status" data-terminal-line style="--line: 1">
+                      <span aria-hidden="true">✓</span>
+                      <span data-i18n="terminalAnalysisComplete">Analysis complete: Codex</span>
+                    </p>
+                    <div class="terminal-app" data-terminal-line style="--line: 2">
+                      <strong>Codex</strong>
+                      <code>/Applications/Codex.app</code>
+                    </div>
+                    <dl class="terminal-result">
+                      <div data-terminal-line style="--line: 3">
+                        <dt data-i18n="terminalType">Type</dt>
+                        <dd><span class="terminal-chip" data-i18n="terminalCrossPlatform">Cross-platform</span><b>Electron</b></dd>
+                      </div>
+                      <div data-terminal-line style="--line: 4">
+                        <dt data-i18n="terminalEvidence">Evidence</dt>
+                        <dd><code>Electron Framework.framework</code><code>app.asar</code></dd>
+                      </div>
+                      <div data-terminal-line style="--line: 5">
+                        <dt>Bundle ID</dt>
+                        <dd><code>com.openai.codex</code></dd>
+                      </div>
+                      <div data-terminal-line style="--line: 6">
+                        <dt data-i18n="terminalSignature">Signature</dt>
+                        <dd><span class="terminal-ok" data-i18n="signalSigned">Signed</span></dd>
+                      </div>
+                      <div data-terminal-line style="--line: 7">
+                        <dt data-i18n="terminalNotarization">Notarization</dt>
+                        <dd><span class="terminal-ok" data-i18n="signalVerified">Notarized</span></dd>
+                      </div>
+                    </dl>
+                  </div>
                   <span class="scan-beam" aria-hidden="true"></span>
                   <span class="target-corner target-corner-a" aria-hidden="true"></span>
                   <span class="target-corner target-corner-b" aria-hidden="true"></span>
@@ -139,11 +175,33 @@
                   <code>buildby --all</code>
                 </div>
                 <figure class="trace-media">
-                  <div class="media-frame">
-                    <img src="screenshot/img-scan-en.png" width="1400" height="374" alt="buildby scan result grouping 62 desktop apps by technology stack" loading="lazy" data-src-en="screenshot/img-scan-en.png" data-src-zh="screenshot/img-scan.png" data-width-en="1400" data-height-en="374" data-width-zh="1258" data-height-zh="506" data-i18n-alt="scanImageAlt">
+                  <div class="media-frame terminal-surface terminal-frame" data-terminal role="img" aria-label="Animated terminal scanning installed apps and drawing their runtime distribution" data-i18n-aria-label="scanTerminalAria">
+                    <div class="terminal-window-bar" data-terminal-line style="--line: 0">
+                      <span aria-hidden="true"><i></i><i></i><i></i></span>
+                      <code>~/Applications</code>
+                    </div>
+                    <div class="terminal-command" data-terminal-line style="--line: 1">
+                      <span class="terminal-prompt" aria-hidden="true">›</span>
+                      <code>buildby --all</code>
+                      <span class="terminal-cursor" aria-hidden="true"></span>
+                    </div>
+                    <p class="terminal-status" data-terminal-line style="--line: 2">
+                      <span aria-hidden="true">✓</span>
+                      <span data-i18n="terminalScanComplete">Scan complete · 59 applications classified</span>
+                    </p>
+                    <div class="runtime-chart">
+                      <div class="runtime-row" data-terminal-line style="--line: 3; --value: 0.58"><span>Native</span><i></i><b>26</b></div>
+                      <div class="runtime-row" data-terminal-line style="--line: 4; --value: 0.38"><span>Electron</span><i></i><b>17</b></div>
+                      <div class="runtime-row" data-terminal-line style="--line: 5; --value: 0.18"><span>Chromium</span><i></i><b>04</b></div>
+                      <div class="runtime-row" data-terminal-line style="--line: 6; --value: 0.18"><span>wxWidgets</span><i></i><b>04</b></div>
+                      <div class="runtime-row" data-terminal-line style="--line: 7; --value: 0.15"><span>Flutter</span><i></i><b>03</b></div>
+                      <div class="runtime-row" data-terminal-line style="--line: 8; --value: 0.1"><span>JVM</span><i></i><b>02</b></div>
+                      <div class="runtime-row" data-terminal-line style="--line: 9; --value: 0.1"><span>Qt</span><i></i><b>02</b></div>
+                      <div class="runtime-row" data-terminal-line style="--line: 10; --value: 0.06"><span>Tauri</span><i></i><b>01</b></div>
+                    </div>
                     <span class="media-scan" aria-hidden="true"></span>
                   </div>
-                  <figcaption><span data-i18n="scanCaption">Inventory / runtime distribution</span><code data-i18n="scanCount">62 APPS</code></figcaption>
+                  <figcaption><span data-i18n="scanCaption">Inventory / runtime distribution</span><code data-i18n="scanCount">59 APPS</code></figcaption>
                 </figure>
               </article>
 
@@ -155,11 +213,40 @@
                   <code data-i18n="filterCommand">buildby --electron</code>
                 </div>
                 <figure class="trace-media">
-                  <div class="media-frame">
-                    <img src="screenshot/img-filter-en.png" width="1420" height="827" alt="buildby filter result listing Electron applications with versions, sizes, bundle identifiers, and paths" loading="lazy" data-src-en="screenshot/img-filter-en.png" data-src-zh="screenshot/img-filter.png" data-width-en="1420" data-height-en="827" data-width-zh="1500" data-height-zh="492" data-i18n-alt="filterImageAlt">
+                  <div class="media-frame terminal-surface terminal-frame terminal-table-frame" data-terminal role="img" aria-label="Animated terminal filtering Flutter apps into a version, size, identity, and path table" data-i18n-aria-label="filterTerminalAria">
+                    <div class="terminal-window-bar" data-terminal-line style="--line: 0">
+                      <span aria-hidden="true"><i></i><i></i><i></i></span>
+                      <code>framework / Flutter</code>
+                    </div>
+                    <div class="terminal-command" data-terminal-line style="--line: 1">
+                      <span class="terminal-prompt" aria-hidden="true">›</span>
+                      <code>buildby --flutter</code>
+                      <span class="terminal-cursor" aria-hidden="true"></span>
+                    </div>
+                    <p class="terminal-status" data-terminal-line style="--line: 2">
+                      <span aria-hidden="true">✓</span>
+                      <span data-i18n="terminalMatchesFound">3 Flutter applications found</span>
+                    </p>
+                    <div class="terminal-table" data-terminal-line style="--line: 3">
+                      <div class="terminal-table-head">
+                        <span data-i18n="tableApp">Application</span>
+                        <span data-i18n="tableVersion">Version</span>
+                        <span data-i18n="tableSize">Size</span>
+                        <span class="terminal-col-detail" data-i18n="tableBundle">Bundle identity</span>
+                      </div>
+                      <div class="terminal-table-row" data-terminal-line style="--line: 4">
+                        <span><b>FlClash</b><code>/Applications/FlClash.app</code></span><span>0.8.92</span><span>139.4 MB</span><code class="terminal-col-detail">com.follow.clash</code>
+                      </div>
+                      <div class="terminal-table-row" data-terminal-line style="--line: 5">
+                        <span><b>LocalSend</b><code>/Applications/LocalSend.app</code></span><span>1.8.0</span><span>54.7 MB</span><code class="terminal-col-detail">org.localsend.localsendApp</code>
+                      </div>
+                      <div class="terminal-table-row" data-terminal-line style="--line: 6">
+                        <span><b>Reqable</b><code>/Applications/Reqable.app</code></span><span>3.0.39</span><span>83.0 MB</span><code class="terminal-col-detail">com.reqable.macosx</code>
+                      </div>
+                    </div>
                     <span class="media-scan" aria-hidden="true"></span>
                   </div>
-                  <figcaption><span data-i18n="filterCaption">Framework filter / identity table</span><code data-i18n="filterRuntime">ELECTRON</code></figcaption>
+                  <figcaption><span data-i18n="filterCaption">Framework filter / identity table</span><code data-i18n="filterRuntime">FLUTTER</code></figcaption>
                 </figure>
               </article>
             </div>

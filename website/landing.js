@@ -25,7 +25,13 @@ const translations = {
     copySuccessStatus: 'Install command copied to the clipboard.',
     copyErrorStatus: 'Clipboard access was blocked. Select the command and copy it manually.',
     liveInspection: 'Live inspection',
-    heroImageAlt: 'buildby identifying Codex as an Electron app and displaying its signature and notarization details',
+    heroTerminalAria: 'Animated terminal running buildby Codex and reporting the detected framework, evidence, signature, and notarization status',
+    terminalAnalysisComplete: 'Analysis complete: Codex',
+    terminalType: 'Type',
+    terminalCrossPlatform: 'Cross-platform',
+    terminalEvidence: 'Evidence',
+    terminalSignature: 'Signature',
+    terminalNotarization: 'Notarization',
     signalFramework: 'Framework',
     signalTrust: 'Trust',
     signalVerified: 'Notarized',
@@ -36,17 +42,23 @@ const translations = {
     traceLabel: 'Trace',
     tourTitle: 'Trace the verdict back to the files.',
     tourLead: 'Start broad, isolate the runtime, then inspect the evidence behind the match.',
-    scanImageAlt: 'buildby scan result grouping 62 desktop apps by technology stack',
+    scanTerminalAria: 'Animated terminal scanning installed apps and drawing their runtime distribution',
+    terminalScanComplete: 'Scan complete · 59 applications classified',
     scanTitle: 'Map the entire machine.',
     scanCopy: 'Scan installed applications in one pass and expose the runtime distribution across the desktop.',
     scanCaption: 'Inventory / runtime distribution',
-    scanCount: '62 APPS',
-    filterImageAlt: 'buildby filter result listing Electron applications with versions, sizes, bundle identifiers, and paths',
+    scanCount: '59 APPS',
+    filterTerminalAria: 'Animated terminal filtering Flutter apps into a version, size, identity, and path table',
+    terminalMatchesFound: '3 Flutter applications found',
+    tableApp: 'Application',
+    tableVersion: 'Version',
+    tableSize: 'Size',
+    tableBundle: 'Bundle identity',
     filterTitle: 'Narrow the field.',
     filterCopy: 'Filter by framework to compare versions, bundle identities, sizes, and locations without noise.',
     filterCaption: 'Framework filter / identity table',
-    filterCommand: 'buildby --electron',
-    filterRuntime: 'ELECTRON',
+    filterCommand: 'buildby --flutter',
+    filterRuntime: 'FLUTTER',
     methodLabel: 'Method',
     methodTitle: 'No guesswork in the pipeline.',
     methodCopy: 'Every result moves through the same inspect, verify, and report sequence.',
@@ -109,7 +121,13 @@ const translations = {
     copySuccessStatus: '安装命令已复制到剪贴板。',
     copyErrorStatus: '浏览器阻止了剪贴板访问，请手动选择并复制命令。',
     liveInspection: '实时检测',
-    heroImageAlt: 'buildby 将 Codex 识别为 Electron 应用，并显示其签名与公证信息',
+    heroTerminalAria: '终端动画：运行 buildby Codex，并依次呈现检测框架、依据、签名与公证状态',
+    terminalAnalysisComplete: '检测完成：Codex',
+    terminalType: '类型',
+    terminalCrossPlatform: '跨平台',
+    terminalEvidence: '判定依据',
+    terminalSignature: '签名',
+    terminalNotarization: '公证',
     signalFramework: '框架',
     signalTrust: '可信状态',
     signalVerified: '已公证',
@@ -120,12 +138,18 @@ const translations = {
     traceLabel: '追踪',
     tourTitle: '沿着文件，追溯每个结论。',
     tourLead: '先扫描全局，再锁定运行时，最后查看命中特征背后的依据。',
-    scanImageAlt: 'buildby 扫描结果按技术栈归类了 62 个桌面应用',
+    scanTerminalAria: '终端动画：扫描已安装应用，并绘制运行时分布',
+    terminalScanComplete: '扫描完成 · 已归类 59 个应用',
     scanTitle: '绘制整台电脑。',
     scanCopy: '一次扫描全部已安装应用，呈现桌面环境中的运行时分布。',
     scanCaption: '应用清单 / 运行时分布',
     scanCount: '59 APPS',
-    filterImageAlt: 'buildby 筛选结果列出 Flutter 应用的版本、大小、包标识符与路径',
+    filterTerminalAria: '终端动画：筛选 Flutter 应用，并生成版本、大小、包身份和路径列表',
+    terminalMatchesFound: '找到 3 个 Flutter 应用',
+    tableApp: '应用',
+    tableVersion: '版本',
+    tableSize: '大小',
+    tableBundle: '包身份',
     filterTitle: '缩小取证范围。',
     filterCopy: '按框架筛选版本、包身份、体积与路径，排除无关噪音。',
     filterCaption: '框架筛选 / 身份列表',
@@ -232,16 +256,6 @@ function applyLanguage(language, persist = false) {
   document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
     element.setAttribute('placeholder', translate(element.dataset.i18nPlaceholder));
   });
-  document.querySelectorAll('[data-i18n-alt]').forEach((element) => {
-    element.setAttribute('alt', translate(element.dataset.i18nAlt));
-  });
-  document.querySelectorAll('[data-src-en]').forEach((image) => {
-    const suffix = currentLanguage === 'zh' ? 'Zh' : 'En';
-    image.src = image.dataset[`src${suffix}`];
-    image.width = Number(image.dataset[`width${suffix}`]);
-    image.height = Number(image.dataset[`height${suffix}`]);
-  });
-
   const languageToggle = document.querySelector('#language-toggle');
   if (languageToggle) {
     languageToggle.querySelector('span').textContent = currentLanguage === 'zh' ? 'EN' : '中';
@@ -354,6 +368,20 @@ if (reducedMotion.matches || !('IntersectionObserver' in window)) {
     });
   }, { threshold: 0.13, rootMargin: '0px 0px -5% 0px' });
   revealTargets.forEach((target) => revealObserver.observe(target));
+}
+
+const terminalTargets = [...document.querySelectorAll('[data-terminal]')];
+if (reducedMotion.matches || !('IntersectionObserver' in window)) {
+  terminalTargets.forEach((target) => target.classList.add('is-terminal-active'));
+} else {
+  const terminalObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-terminal-active');
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.24, rootMargin: '0px 0px -8% 0px' });
+  terminalTargets.forEach((target) => terminalObserver.observe(target));
 }
 
 const inspectionStage = document.querySelector('.inspection-stage');

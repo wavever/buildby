@@ -127,6 +127,7 @@ kbd,
 .hero-summary,
 .command-note,
 .stage-header,
+.terminal-surface,
 .signal-rail,
 .trace-number,
 .footer-kicker {
@@ -529,37 +530,165 @@ kbd,
 
 .inspection-viewport {
   position: relative;
-  height: 7.5rem;
+  height: 9rem;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: var(--color-graphite);
 }
 
-.inspection-viewport::after {
+.terminal-surface {
+  isolation: isolate;
+  color: var(--color-graphite-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.terminal-surface::before {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 0;
   pointer-events: none;
-  background-image: linear-gradient(90deg, color-mix(in oklch, var(--color-signal) 14%, transparent) 1px, transparent 1px), linear-gradient(color-mix(in oklch, var(--color-signal) 10%, transparent) 1px, transparent 1px);
+  background-image:
+    radial-gradient(circle at 78% 18%, color-mix(in oklch, var(--color-signal) 10%, transparent), transparent 32%),
+    linear-gradient(90deg, color-mix(in oklch, var(--color-signal) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in oklch, var(--color-signal) 8%, transparent) 1px, transparent 1px);
   background-size: 3rem 3rem;
-  mix-blend-mode: screen;
 }
 
-.inspection-viewport img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: top center;
-  filter: saturate(0.82) contrast(1.05);
+.terminal-command,
+.terminal-output,
+.terminal-window-bar,
+.terminal-frame > .terminal-status,
+.runtime-chart,
+.terminal-table {
+  position: relative;
+  z-index: var(--z-base);
 }
 
-html[lang="zh-CN"] .inspection-viewport img {
-  object-fit: contain;
+.terminal-command {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-graphite-ink);
+  font-size: clamp(0.62rem, 1.5vw, 0.82rem);
+  line-height: 1.4;
 }
 
-@media (max-width: 39.99rem) {
-  html[lang="zh-CN"] .inspection-viewport img {
-    object-fit: cover;
-  }
+.terminal-command code {
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-prompt,
+.terminal-status > span:first-child,
+.terminal-ok {
+  color: var(--color-signal);
+}
+
+.terminal-cursor {
+  width: 0.45em;
+  height: 1.05em;
+  flex: 0 0 auto;
+  background: var(--color-signal);
+}
+
+.terminal-output {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 0.18rem;
+}
+
+.terminal-status {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-graphite-muted);
+  font-size: clamp(0.55rem, 1.25vw, 0.72rem);
+  line-height: 1.35;
+}
+
+.terminal-app {
+  min-width: 0;
+  padding-block: 0.22rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  border-block-end: var(--rule-thin) solid var(--color-graphite-rule);
+  font-size: clamp(0.58rem, 1.35vw, 0.76rem);
+}
+
+.terminal-app strong {
+  color: var(--color-signal);
+  font-weight: 600;
+}
+
+.terminal-app code {
+  overflow: hidden;
+  color: var(--color-graphite-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-result {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+}
+
+.terminal-result > div {
+  min-width: 0;
+  padding-block: 0.14rem;
+  display: grid;
+  grid-template-columns: minmax(4rem, 0.33fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+  border-block-end: var(--rule-thin) solid color-mix(in oklch, var(--color-graphite-rule) 58%, transparent);
+  font-size: clamp(0.5rem, 1.1vw, 0.7rem);
+  line-height: 1.25;
+}
+
+.terminal-result dt {
+  overflow: hidden;
+  color: var(--color-graphite-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-result dd {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  overflow: hidden;
+}
+
+.terminal-result dd code {
+  overflow: hidden;
+  color: var(--color-graphite-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-chip {
+  padding-inline: 0.32rem;
+  border: var(--rule-thin) solid color-mix(in oklch, var(--color-signal) 62%, var(--color-graphite-rule));
+  color: var(--color-signal);
+  white-space: nowrap;
+}
+
+.terminal-result b,
+.runtime-row b,
+.terminal-table-row b {
+  font-weight: 500;
 }
 
 .scan-beam,
@@ -783,22 +912,145 @@ html[lang="zh-CN"] .inspection-viewport img {
 
 .media-frame {
   position: relative;
-  min-height: 12rem;
-  padding: clamp(0.6rem, 1.8vw, 1.25rem);
+  min-height: clamp(20rem, 40vw, 29rem);
+  padding: 0;
   overflow: hidden;
   border: var(--rule-thin) solid var(--color-graphite-rule);
   background: var(--color-graphite);
 }
 
-.media-frame img {
-  width: 100%;
-  height: auto;
-  border: var(--rule-thin) solid var(--color-graphite-rule);
-  filter: saturate(0.82) contrast(1.04);
+.terminal-window-bar {
+  min-height: 2.4rem;
+  padding-inline: clamp(0.75rem, 2vw, 1.25rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  border-block-end: var(--rule-thin) solid var(--color-graphite-rule);
+  color: var(--color-graphite-muted);
+  font-size: 0.64rem;
+}
+
+.terminal-window-bar > span {
+  display: flex;
+  gap: 0.34rem;
+}
+
+.terminal-window-bar i {
+  width: 0.38rem;
+  height: 0.38rem;
+  border: var(--rule-thin) solid var(--color-graphite-muted);
+  border-radius: 50%;
+}
+
+.terminal-frame > .terminal-command,
+.terminal-frame > .terminal-status,
+.runtime-chart,
+.terminal-table {
+  margin-inline: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.terminal-frame > .terminal-command {
+  margin-block-start: clamp(0.8rem, 2vw, 1.35rem);
+}
+
+.terminal-frame > .terminal-status {
+  margin-block-start: 0.48rem;
+  padding-block-end: 0.72rem;
+  border-block-end: var(--rule-thin) solid var(--color-graphite-rule);
+}
+
+.runtime-chart {
+  padding-block: clamp(0.7rem, 1.8vw, 1.2rem);
+  display: grid;
+  gap: clamp(0.42rem, 1vw, 0.68rem);
+}
+
+.runtime-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 0.28fr) minmax(0, 1fr) 2ch;
+  align-items: center;
+  gap: clamp(0.5rem, 1.4vw, 0.9rem);
+  color: var(--color-graphite-muted);
+  font-size: clamp(0.58rem, 1vw, 0.74rem);
+  line-height: 1;
+}
+
+.runtime-row i {
+  position: relative;
+  height: 0.32rem;
+  overflow: hidden;
+  background: var(--color-graphite-3);
+}
+
+.runtime-row i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: scaleX(var(--value));
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--color-signal), color-mix(in oklch, var(--color-signal) 52%, var(--color-graphite-3)));
+}
+
+.runtime-row b {
+  color: var(--color-graphite-ink);
+  text-align: end;
+}
+
+.terminal-table {
+  margin-block-start: 0.75rem;
+  border-block-start: var(--rule-thin) solid var(--color-graphite-rule);
+}
+
+.terminal-table-head,
+.terminal-table-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 1fr) minmax(3.2rem, 0.3fr) minmax(4rem, 0.36fr);
+  align-items: center;
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+.terminal-table-head {
+  min-height: 2rem;
+  color: var(--color-graphite-muted);
+  font-size: clamp(0.5rem, 0.9vw, 0.64rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.terminal-table-row {
+  min-height: clamp(3.5rem, 7vw, 4.5rem);
+  border-block-start: var(--rule-thin) solid color-mix(in oklch, var(--color-graphite-rule) 64%, transparent);
+  color: var(--color-graphite-muted);
+  font-size: clamp(0.54rem, 0.95vw, 0.69rem);
+}
+
+.terminal-table-row > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.terminal-table-row b {
+  color: var(--color-graphite-ink);
+}
+
+.terminal-table-row span code {
+  overflow: hidden;
+  color: var(--color-graphite-muted);
+  font-size: 0.88em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-col-detail {
+  display: none;
 }
 
 .media-scan {
-  inset-inline: clamp(0.6rem, 1.8vw, 1.25rem);
+  inset-inline: 0;
   animation-duration: 5.8s;
   animation-delay: -1.4s;
 }
@@ -1220,6 +1472,51 @@ html[lang="zh-CN"] .inspection-viewport img {
   transition-delay: calc(var(--reveal-order, 0) * 90ms);
 }
 
+.js [data-terminal]:not(.is-terminal-active) [data-terminal-line] {
+  opacity: 0;
+  transform: translateY(0.45rem);
+}
+
+.js [data-terminal].is-terminal-active [data-terminal-line] {
+  animation: terminal-line-in 380ms var(--ease-out) both;
+  animation-delay: calc(160ms + var(--line, 0) * 90ms);
+}
+
+.js [data-terminal]:not(.is-terminal-active) .runtime-row i::after {
+  transform: scaleX(0);
+}
+
+.js [data-terminal].is-terminal-active .runtime-row i::after {
+  animation: terminal-bar-grow 680ms var(--ease-out) both;
+  animation-delay: calc(360ms + var(--line, 0) * 90ms);
+}
+
+.js [data-terminal].is-terminal-active .terminal-cursor {
+  animation: caret-blink 720ms steps(1, end) 5;
+}
+
+@keyframes terminal-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes terminal-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(var(--value));
+  }
+}
+
 @keyframes scan-vertical {
   0%,
   100% {
@@ -1267,7 +1564,18 @@ html[lang="zh-CN"] .inspection-viewport img {
   }
 
   .inspection-viewport {
-    height: 7rem;
+    height: 8.5rem;
+  }
+
+  .terminal-result > div {
+    grid-template-columns: minmax(3.6rem, 0.32fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 39.99rem) {
+  .terminal-app code,
+  .terminal-result dd code:nth-of-type(2) {
+    display: none;
   }
 }
 
@@ -1326,6 +1634,34 @@ html[lang="zh-CN"] .inspection-viewport img {
 
   .inspection-viewport {
     height: clamp(15rem, 42vw, 24rem);
+    padding: clamp(0.9rem, 2vw, 1.35rem);
+  }
+
+  .terminal-output {
+    margin-block-start: 0.45rem;
+    gap: 0.38rem;
+  }
+
+  .terminal-app {
+    padding-block: 0.45rem;
+  }
+
+  .terminal-result > div {
+    padding-block: 0.34rem;
+    grid-template-columns: minmax(6.5rem, 0.3fr) minmax(0, 1fr);
+  }
+
+  .terminal-table-head,
+  .terminal-table-row {
+    grid-template-columns: minmax(7rem, 1fr) minmax(3.5rem, 0.28fr) minmax(4.5rem, 0.36fr) minmax(9rem, 0.85fr);
+  }
+
+  .terminal-col-detail {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .signal-rail {
@@ -1546,8 +1882,13 @@ html[lang="zh-CN"] .inspection-viewport img {
 
   .inspection-stage,
   .js .reveal-once,
-  .js [data-reveal] {
+  .js [data-reveal],
+  .js [data-terminal] [data-terminal-line] {
     opacity: 1;
     transform: none;
+  }
+
+  .js [data-terminal] .runtime-row i::after {
+    transform: scaleX(var(--value));
   }
 }
