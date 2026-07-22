@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en" data-theme="forensic">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="buildby identifies how desktop apps are built and reports the evidence, signatures, and notarization details behind the result.">
+    <meta property="og:title" content="buildby — desktop app forensics">
+    <meta property="og:description" content="Point buildby at a desktop app. Trace its framework, signature, identity, and notarization status.">
+    <meta property="og:image" content="https://wavever.github.io/buildby/assets/social-preview.png">
+    <meta property="og:url" content="https://wavever.github.io/buildby/">
+    <meta name="theme-color" content="#080c12">
+    <title>buildby — desktop app forensics</title>
+    <link rel="canonical" href="https://wavever.github.io/buildby/">
+    <link rel="icon" href="assets/buildby-icon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css">
+    <script defer
+      src="https://vibeloft.ai/telemetry/v1.js"
+      data-vl-product-id="ed499ea7-2bd5-41b9-8017-7a80023055db"
+      data-vl-auth-key="vl_web.pWk0f5PbxJStk41HBa3yINb9vU-7aEvu3IdBekGTVes"
+    ></script>
+    <script>
+      document.documentElement.classList.add('js');
+      try {
+        const requestedLanguage = new URLSearchParams(location.search).get('lang');
+        const preferredLanguage = requestedLanguage || localStorage.getItem('buildby-language') || navigator.language;
+        if (preferredLanguage.toLowerCase().startsWith('zh')) document.documentElement.lang = 'zh-CN';
+      } catch {}
+    </script>
+    <script src="landing.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-i18n="skipLink">Skip to content</a>
+
+    <div id="page-shell">
+      <header class="site-nav" id="top">
+        <div class="nav-inner">
+          <a class="brand" href="#top" aria-label="buildby home" data-i18n-aria-label="brandHome">
+            <img src="assets/buildby-icon.svg" width="36" height="36" alt="">
+            <span>buildby</span>
+          </a>
+
+          <button class="command-trigger" id="command-trigger" type="button" aria-haspopup="dialog" aria-controls="command-dialog">
+            <span class="command-trigger-mark" aria-hidden="true">/</span>
+            <span class="command-trigger-text" data-i18n="commandTrigger">Open command index</span>
+            <span class="command-trigger-keys" aria-hidden="true"><kbd>⌘</kbd><kbd>K</kbd></span>
+          </button>
+
+          <nav class="nav-actions" aria-label="Primary navigation" data-i18n-aria-label="primaryNavigation">
+            <button class="language-toggle" id="language-toggle" type="button" aria-label="Switch to Chinese" title="Switch to Chinese">
+              <span aria-hidden="true">中</span>
+            </button>
+            <a class="nav-link nav-link-secondary" href="https://github.com/wavever/buildby#readme" data-i18n="readme">Readme</a>
+            <a class="nav-link" href="https://github.com/wavever/buildby" target="_blank" rel="noreferrer">GitHub ↗</a>
+          </nav>
+        </div>
+      </header>
+
+      <main id="main">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-grid" aria-hidden="true"></div>
+          <div class="hero-inner">
+            <div class="hero-copy reveal-once">
+              <p class="hero-summary">
+                <span class="live-signal" aria-hidden="true"></span>
+                <span data-i18n="heroSummary">Desktop app forensics · macOS / Windows</span>
+              </p>
+              <p class="hero-brand" aria-hidden="true">buildby</p>
+              <h1 id="hero-title" data-i18n="heroTitle">Know the stack. Verify the evidence.</h1>
+              <p class="hero-lede" data-i18n="heroLede">Inspect the bundle, identify the framework, and verify who signed it—all from one local command.</p>
+
+              <div class="install-command" aria-label="Install buildby from npm" data-i18n-aria-label="installAria">
+                <span class="prompt" aria-hidden="true">$</span>
+                <code id="typed-command" data-command="npm i -g @wavever/buildby">npm i -g @wavever/buildby</code>
+                <button class="copy-button" type="button" data-copy="npm i -g @wavever/buildby">
+                  <span class="copy-label" data-i18n="copyInstall">Copy install</span>
+                </button>
+              </div>
+              <p class="command-note" aria-live="polite" id="copy-status" data-i18n="commandNote">Node.js 18+ · MIT licensed · local only</p>
+            </div>
+
+            <figure class="hero-visual reveal-once" id="hero-inspection">
+              <div class="inspection-stage">
+                <div class="stage-header">
+                  <span><i aria-hidden="true"></i><span data-i18n="liveInspection">Live inspection</span></span>
+                  <code>SESSION / 01</code>
+                </div>
+                <div class="inspection-viewport">
+                  <img src="screenshot/img-app-en.png" width="1124" height="768" alt="buildby identifying Codex as an Electron app and displaying its signature and notarization details" fetchpriority="high" data-src-en="screenshot/img-app-en.png" data-src-zh="screenshot/img-app.png" data-width-en="1124" data-height-en="768" data-width-zh="814" data-height-zh="854" data-i18n-alt="heroImageAlt">
+                  <span class="scan-beam" aria-hidden="true"></span>
+                  <span class="target-corner target-corner-a" aria-hidden="true"></span>
+                  <span class="target-corner target-corner-b" aria-hidden="true"></span>
+                </div>
+                <dl class="signal-rail">
+                  <div>
+                    <dt data-i18n="signalFramework">Framework</dt>
+                    <dd><span aria-hidden="true"></span>Electron</dd>
+                  </div>
+                  <div>
+                    <dt data-i18n="signalTrust">Trust</dt>
+                    <dd><span aria-hidden="true"></span><span data-i18n="signalVerified">Notarized</span></dd>
+                  </div>
+                  <div>
+                    <dt data-i18n="signalIdentity">Identity</dt>
+                    <dd><span aria-hidden="true"></span><span data-i18n="signalSigned">Signed</span></dd>
+                  </div>
+                </dl>
+              </div>
+              <figcaption>
+                <code>buildby Codex</code>
+                <span data-i18n="heroCaption">Bundle inspection / evidence matrix</span>
+              </figcaption>
+            </figure>
+          </div>
+
+          <div class="hero-foot" aria-hidden="true">
+            <span>01</span>
+            <span data-i18n="heroFoot">Trace every verdict to its source</span>
+            <span>↓</span>
+          </div>
+        </section>
+
+        <section class="trace" id="tour" aria-labelledby="tour-title">
+          <div class="section-shell">
+            <header class="section-heading" data-reveal>
+              <p class="section-index"><span>01</span> / <span data-i18n="traceLabel">Trace</span></p>
+              <h2 id="tour-title" data-i18n="tourTitle">Trace the verdict back to the files.</h2>
+              <p data-i18n="tourLead">Start broad, isolate the runtime, then inspect the evidence behind the match.</p>
+            </header>
+
+            <div class="trace-sequence">
+              <article class="trace-entry" id="scan" data-reveal>
+                <div class="trace-copy">
+                  <span class="trace-number">01</span>
+                  <h3 data-i18n="scanTitle">Map the entire machine.</h3>
+                  <p data-i18n="scanCopy">Scan installed applications in one pass and expose the runtime distribution across the desktop.</p>
+                  <code>buildby --all</code>
+                </div>
+                <figure class="trace-media">
+                  <div class="media-frame">
+                    <img src="screenshot/img-scan-en.png" width="1400" height="374" alt="buildby scan result grouping 62 desktop apps by technology stack" loading="lazy" data-src-en="screenshot/img-scan-en.png" data-src-zh="screenshot/img-scan.png" data-width-en="1400" data-height-en="374" data-width-zh="1258" data-height-zh="506" data-i18n-alt="scanImageAlt">
+                    <span class="media-scan" aria-hidden="true"></span>
+                  </div>
+                  <figcaption><span data-i18n="scanCaption">Inventory / runtime distribution</span><code data-i18n="scanCount">62 APPS</code></figcaption>
+                </figure>
+              </article>
+
+              <article class="trace-entry trace-entry-reverse" id="filter" data-reveal>
+                <div class="trace-copy">
+                  <span class="trace-number">02</span>
+                  <h3 data-i18n="filterTitle">Narrow the field.</h3>
+                  <p data-i18n="filterCopy">Filter by framework to compare versions, bundle identities, sizes, and locations without noise.</p>
+                  <code data-i18n="filterCommand">buildby --electron</code>
+                </div>
+                <figure class="trace-media">
+                  <div class="media-frame">
+                    <img src="screenshot/img-filter-en.png" width="1420" height="827" alt="buildby filter result listing Electron applications with versions, sizes, bundle identifiers, and paths" loading="lazy" data-src-en="screenshot/img-filter-en.png" data-src-zh="screenshot/img-filter.png" data-width-en="1420" data-height-en="827" data-width-zh="1500" data-height-zh="492" data-i18n-alt="filterImageAlt">
+                    <span class="media-scan" aria-hidden="true"></span>
+                  </div>
+                  <figcaption><span data-i18n="filterCaption">Framework filter / identity table</span><code data-i18n="filterRuntime">ELECTRON</code></figcaption>
+                </figure>
+              </article>
+            </div>
+          </div>
+          <span id="tour-end" class="observer-sentinel" aria-hidden="true"></span>
+        </section>
+
+        <section class="method" id="method" aria-labelledby="method-title">
+          <div class="method-inner">
+            <header class="method-copy" data-reveal>
+              <p class="section-index"><span>02</span> / <span data-i18n="methodLabel">Method</span></p>
+              <h2 id="method-title" data-i18n="methodTitle">No guesswork in the pipeline.</h2>
+              <p data-i18n="methodCopy">Every result moves through the same inspect, verify, and report sequence.</p>
+            </header>
+
+            <dl class="method-ledger">
+              <div data-reveal style="--reveal-order: 0">
+                <dt><span>01</span><b data-i18n="methodInput">Target</b></dt>
+                <dd data-i18n="methodInputCopy">Resolve an app name, path, machine scan, or framework filter.</dd>
+              </div>
+              <div data-reveal style="--reveal-order: 1">
+                <dt><span>02</span><b data-i18n="methodInspect">Inspect</b></dt>
+                <dd data-i18n="methodInspectCopy">Read framework directories, resources, linked binaries, and metadata.</dd>
+              </div>
+              <div data-reveal style="--reveal-order: 2">
+                <dt><span>03</span><b data-i18n="methodVerify">Verify</b></dt>
+                <dd data-i18n="methodVerifyCopy">Check developer identity, signature, notarization, and hardened runtime.</dd>
+              </div>
+              <div data-reveal style="--reveal-order: 3">
+                <dt><span>04</span><b data-i18n="methodReport">Report</b></dt>
+                <dd data-i18n="methodReportCopy">Return the classification together with the evidence that produced it.</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+
+        <section class="coverage" id="coverage" aria-labelledby="coverage-title">
+          <div class="coverage-inner">
+            <header class="coverage-heading" data-reveal>
+              <p class="section-index"><span>03</span> / <span data-i18n="coverageLabel">Coverage</span></p>
+              <h2 id="coverage-title" data-i18n="coverageTitle">A field guide to the modern desktop.</h2>
+              <p data-i18n="coverageLead">No admin privileges. No binary disassembly. Every scan stays on the machine.</p>
+            </header>
+
+            <dl class="spec-sheet" data-reveal>
+              <div>
+                <dt data-i18n="webRuntimes">Web runtimes</dt>
+                <dd>Electron · Chromium · CEF · NW.js</dd>
+                <span data-i18n="webRuntimesEvidence">Bundle and resource signatures</span>
+              </div>
+              <div>
+                <dt data-i18n="crossPlatformUi">Cross-platform UI</dt>
+                <dd>Flutter · Tauri · Qt · wxWidgets · React Native</dd>
+                <span data-i18n="crossPlatformEvidence">Framework and binary evidence</span>
+              </div>
+              <div>
+                <dt data-i18n="managedRuntimes">Managed runtimes</dt>
+                <dd>JVM · .NET · Unity</dd>
+                <span data-i18n="managedEvidence">Runtime directories and linked libraries</span>
+              </div>
+              <div>
+                <dt data-i18n="nativeFallback">Native fallback</dt>
+                <dd>Swift · Objective-C · Win32</dd>
+                <span data-i18n="nativeEvidence">Used when no cross-platform signature matches</span>
+              </div>
+              <div>
+                <dt data-i18n="platforms">Platforms</dt>
+                <dd>macOS · Windows</dd>
+                <span data-i18n="platformEvidence">Platform-native trust checks</span>
+              </div>
+            </dl>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer" id="footer">
+        <div class="footer-grid" aria-hidden="true"></div>
+        <div class="footer-inner">
+          <p class="footer-kicker" data-i18n="footerKicker">Local. Verifiable. Open source.</p>
+          <p class="footer-statement" data-i18n="footerStatement">Inspect the next app.</p>
+          <div class="footer-command" aria-label="Install buildby from npm" data-i18n-aria-label="installAria">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code>npm i -g @wavever/buildby</code>
+            <button class="copy-button copy-button-footer" type="button" data-copy="npm i -g @wavever/buildby">
+              <span class="copy-label" data-i18n="copyInstall">Copy install</span>
+            </button>
+          </div>
+          <div class="footer-meta">
+            <a class="brand brand-footer" href="#top">
+              <img src="assets/buildby-icon.svg" width="32" height="32" alt="">
+              <span>buildby</span>
+            </a>
+            <div class="footer-links">
+              <a href="https://www.npmjs.com/package/@wavever/buildby" target="_blank" rel="noreferrer">npm ↗</a>
+              <a href="https://github.com/wavever/buildby" target="_blank" rel="noreferrer">GitHub ↗</a>
+              <a href="https://github.com/wavever/buildby/blob/master/LICENSE" data-i18n="mitLicense">MIT license</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <aside class="sticky-cta" id="sticky-cta" aria-label="Install buildby" data-i18n-aria-label="stickyInstallAria">
+        <span class="sticky-status" aria-hidden="true"></span>
+        <code class="sticky-command"><span class="sticky-command-full">npm i -g @wavever/buildby</span><span class="sticky-command-short" data-i18n="installWithNpm">Install with npm</span></code>
+        <button class="copy-button copy-button-compact" type="button" data-copy="npm i -g @wavever/buildby">
+          <span class="copy-label" data-i18n="copy">Copy</span>
+        </button>
+      </aside>
+    </div>
+
+    <dialog class="command-dialog" id="command-dialog" aria-labelledby="command-title">
+      <div class="command-field">
+        <label class="sr-only" for="command-input" id="command-title" data-i18n="commandTrigger">Open command index</label>
+        <span aria-hidden="true">/</span>
+        <input id="command-input" type="search" placeholder="Search commands…" autocomplete="off" spellcheck="false" data-i18n-placeholder="commandSearchPlaceholder">
+        <kbd>esc</kbd>
+      </div>
+      <div class="command-results" role="listbox" aria-label="Page commands" data-i18n-aria-label="pageCommands">
+        <p class="command-group" data-i18n="commands">Command index</p>
+        <a class="command-item is-active" href="#top" role="option" aria-selected="true" data-search="inspect app single signature notarization 检查 单个 应用 签名 公证">
+          <span data-i18n="commandInspect">Inspect one app</span><code>buildby &lt;name&gt;</code>
+        </a>
+        <a class="command-item" href="#scan" role="option" aria-selected="false" data-search="scan all installed apps inventory 扫描 已安装 应用 清单">
+          <span data-i18n="commandScan">Scan installed apps</span><code>buildby --all</code>
+        </a>
+        <a class="command-item" href="#filter" role="option" aria-selected="false" data-search="filter electron flutter tauri framework 筛选 框架 技术栈">
+          <span data-i18n="commandFilter">Filter by framework</span><code>buildby --electron</code>
+        </a>
+        <a class="command-item" href="#coverage" role="option" aria-selected="false" data-search="supported stacks platforms coverage 支持 技术栈 平台">
+          <span data-i18n="commandCoverage">View supported stacks</span><code>macOS · Windows</code>
+        </a>
+      </div>
+      <div class="command-foot">
+        <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="navigate">navigate</span></span>
+        <span><kbd>↵</kbd> <span data-i18n="open">open</span></span>
+        <span id="command-count" aria-live="polite">4 commands</span>
+      </div>
+    </dialog>
+  </body>
+</html>

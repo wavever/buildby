@@ -1,0 +1,34 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">buildby icon</title>
+  <desc id="desc">A minimal desktop window with colorful technology stack layers and an inspection lens.</desc>
+  <defs>
+    <filter id="shadow" x="12" y="14" width="136" height="134" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="160" height="160" rx="34" fill="#F8FAFC"/>
+  <rect x="12" y="12" width="136" height="136" rx="28" stroke="#E2E8F0" stroke-width="2"/>
+
+  <g filter="url(#shadow)">
+    <rect x="30" y="34" width="100" height="82" rx="17" fill="#111827"/>
+    <path d="M30 51C30 41.6112 37.6112 34 47 34H113C122.389 34 130 41.6112 130 51V56H30V51Z" fill="#1F2937"/>
+
+    <circle cx="47" cy="45" r="3.5" fill="#F87171"/>
+    <circle cx="58" cy="45" r="3.5" fill="#FBBF24"/>
+    <circle cx="69" cy="45" r="3.5" fill="#34D399"/>
+
+    <rect x="44" y="70" width="58" height="9" rx="4.5" fill="#8ECBC4"/>
+    <rect x="44" y="86" width="72" height="9" rx="4.5" fill="#5391FF"/>
+    <rect x="44" y="102" width="40" height="9" rx="4.5" fill="#A3E635"/>
+
+    <path d="M60 124H100" stroke="#111827" stroke-width="8" stroke-linecap="round"/>
+    <path d="M80 115V124" stroke="#111827" stroke-width="8" stroke-linecap="round"/>
+
+    <circle cx="101" cy="93" r="20" fill="#F8FAFC" stroke="#111827" stroke-width="7"/>
+    <circle cx="101" cy="93" r="10" fill="#8ECBC4"/>
+    <path d="M116 108L130 122" stroke="#111827" stroke-width="8" stroke-linecap="round"/>
+    <path d="M96 93H106" stroke="#0F766E" stroke-width="4" stroke-linecap="round"/>
+    <path d="M101 88V98" stroke="#0F766E" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>
