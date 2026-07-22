@@ -84,32 +84,54 @@
             <figure class="hero-visual reveal-once" id="hero-inspection">
               <div class="inspection-stage">
                 <div class="stage-header">
-                  <span><i aria-hidden="true"></i><span data-i18n="liveInspection">Live inspection</span></span>
-                  <code>SESSION / 01</code>
+                  <span class="terminal-window-controls" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <code>buildby — zsh</code>
+                  <button class="terminal-replay" type="button" data-terminal-replay="terminal-chatgpt" aria-label="Replay terminal command" data-i18n-aria-label="terminalReplayAria"><span aria-hidden="true">↻</span><span class="terminal-replay-label" data-i18n="terminalReplay">Replay</span></button>
                 </div>
-                <div class="inspection-viewport">
-                  <img src="screenshot/img-app-en.png" width="1124" height="768" alt="buildby identifying Codex as an Electron app and displaying its signature and notarization details" fetchpriority="high" data-src-en="screenshot/img-app-en.png" data-src-zh="screenshot/img-app.png" data-width-en="1124" data-height-en="768" data-width-zh="814" data-height-zh="854" data-i18n-alt="heroImageAlt">
-                  <span class="scan-beam" aria-hidden="true"></span>
-                  <span class="target-corner target-corner-a" aria-hidden="true"></span>
-                  <span class="target-corner target-corner-b" aria-hidden="true"></span>
+                <div class="inspection-viewport terminal-surface terminal-hero" id="terminal-chatgpt" data-terminal role="img" aria-label="Animated terminal running buildby ChatGPT and reproducing its actual inspection output" data-i18n-aria-label="heroTerminalAria">
+                  <div class="terminal-command" data-terminal-line style="--line: 0">
+                    <span class="terminal-prompt" aria-hidden="true">❯</span>
+                    <code>buildby ChatGPT</code>
+                    <span class="terminal-cursor" aria-hidden="true"></span>
+                  </div>
+                  <div class="terminal-transcript">
+                    <p class="terminal-status" data-terminal-line style="--line: 1; --terminal-delay: 0.9s">
+                      <span aria-hidden="true">✔</span>
+                      <span data-i18n="terminalAnalysisComplete">Analysis complete: ChatGPT</span>
+                    </p>
+                    <div class="terminal-block terminal-app" data-terminal-line style="--line: 2; --terminal-delay: 1.05s">
+                      <strong>ChatGPT</strong>
+                      <code>/Applications/ChatGPT.app</code>
+                    </div>
+                    <div class="terminal-block terminal-runtime" data-terminal-line style="--line: 3; --terminal-delay: 1.2s">
+                      <p><span class="terminal-badge" data-i18n="terminalCrossPlatform">Cross-platform</span><strong>⚡ Electron</strong></p>
+                      <p data-i18n="terminalDescription">Cross-platform desktop application built with Web technologies (HTML/CSS/JS)</p>
+                      <code class="terminal-url">https://www.electronjs.org</code>
+                    </div>
+                    <div class="terminal-block terminal-evidence" data-terminal-line style="--line: 4; --terminal-delay: 1.35s">
+                      <strong data-i18n="terminalEvidenceHeading">Evidence:</strong>
+                      <p><span aria-hidden="true">•</span><code>app.asar</code></p>
+                    </div>
+                    <dl class="terminal-block terminal-metadata" data-terminal-line style="--line: 5; --terminal-delay: 1.5s">
+                      <div><dt data-i18n="terminalBundleId">Bundle ID:</dt><dd><code>com.openai.codex</code></dd></div>
+                      <div><dt data-i18n="terminalVersion">Version:</dt><dd><code>26.715.31925</code></dd></div>
+                      <div><dt data-i18n="terminalSize">Size:</dt><dd><code>1.38 GB</code></dd></div>
+                    </dl>
+                    <div class="terminal-block terminal-security" data-terminal-line style="--line: 6; --terminal-delay: 1.65s">
+                      <strong data-i18n="terminalSecurityHeading">Signature &amp; Notarization</strong>
+                      <dl>
+                        <div><dt data-i18n="terminalDeveloper">Developer:</dt><dd>OpenAI OpCo, LLC</dd></div>
+                        <div><dt data-i18n="terminalTeamId">Team ID:</dt><dd><code>2DC432GLL2</code></dd></div>
+                        <div><dt data-i18n="terminalSignature">Signature:</dt><dd class="terminal-ok" data-i18n="signalSigned">Signed</dd></div>
+                        <div><dt data-i18n="terminalNotarization">Notarization:</dt><dd class="terminal-ok" data-i18n="signalVerified">Notarized</dd></div>
+                        <div><dt data-i18n="terminalHardenedRuntime">Hardened Runtime:</dt><dd class="terminal-ok"><span aria-hidden="true">✓</span> <span data-i18n="terminalYes">Yes</span></dd></div>
+                      </dl>
+                    </div>
+                  </div>
                 </div>
-                <dl class="signal-rail">
-                  <div>
-                    <dt data-i18n="signalFramework">Framework</dt>
-                    <dd><span aria-hidden="true"></span>Electron</dd>
-                  </div>
-                  <div>
-                    <dt data-i18n="signalTrust">Trust</dt>
-                    <dd><span aria-hidden="true"></span><span data-i18n="signalVerified">Notarized</span></dd>
-                  </div>
-                  <div>
-                    <dt data-i18n="signalIdentity">Identity</dt>
-                    <dd><span aria-hidden="true"></span><span data-i18n="signalSigned">Signed</span></dd>
-                  </div>
-                </dl>
               </div>
               <figcaption>
-                <code>buildby Codex</code>
+                <code>buildby ChatGPT</code>
                 <span data-i18n="heroCaption">Bundle inspection / evidence matrix</span>
               </figcaption>
             </figure>
@@ -139,11 +161,31 @@
                   <code>buildby --all</code>
                 </div>
                 <figure class="trace-media">
-                  <div class="media-frame">
-                    <img src="screenshot/img-scan-en.png" width="1400" height="374" alt="buildby scan result grouping 62 desktop apps by technology stack" loading="lazy" data-src-en="screenshot/img-scan-en.png" data-src-zh="screenshot/img-scan.png" data-width-en="1400" data-height-en="374" data-width-zh="1258" data-height-zh="506" data-i18n-alt="scanImageAlt">
-                    <span class="media-scan" aria-hidden="true"></span>
+                  <div class="media-frame terminal-surface terminal-frame terminal-long-frame terminal-all-frame" id="terminal-all" data-terminal role="region" aria-label="Animated terminal running buildby --all and reproducing the complete technology stack report" data-i18n-aria-label="scanTerminalAria">
+                    <div class="terminal-window-bar" data-terminal-line style="--line: 0">
+                      <span aria-hidden="true"><i></i><i></i><i></i></span>
+                      <code>buildby — all</code>
+                      <button class="terminal-replay" type="button" data-terminal-replay="terminal-all" aria-label="Replay terminal command" data-i18n-aria-label="terminalReplayAria"><span aria-hidden="true">↻</span><span class="terminal-replay-label" data-i18n="terminalReplay">Replay</span></button>
+                    </div>
+                    <div class="terminal-scroll-window" tabindex="0">
+                      <div class="terminal-stream">
+                        <div class="terminal-command" data-terminal-line style="--line: 1">
+                          <span class="terminal-prompt" aria-hidden="true">❯</span>
+                          <code>buildby --all</code>
+                          <span class="terminal-cursor" aria-hidden="true"></span>
+                        </div>
+                        <p class="terminal-status" data-terminal-line style="--line: 2; --terminal-delay: 0.9s">
+                          <span aria-hidden="true">✔</span>
+                          <span data-i18n="terminalAllComplete">Analyzed 68 applications</span>
+                        </p>
+                        <pre class="terminal-raw-output terminal-all-output" data-terminal-line style="--line: 3; --terminal-delay: 1.05s" data-i18n="terminalAllOutput">Desktop application technology stack report
+Scanned 68 applications · 38.23 GB total
+
+Browse applications by stack…</pre>
+                      </div>
+                    </div>
                   </div>
-                  <figcaption><span data-i18n="scanCaption">Inventory / runtime distribution</span><code data-i18n="scanCount">62 APPS</code></figcaption>
+                  <figcaption><span data-i18n="scanCaption">Inventory / runtime distribution</span><code data-i18n="scanCount">68 APPS</code></figcaption>
                 </figure>
               </article>
 
@@ -155,9 +197,30 @@
                   <code data-i18n="filterCommand">buildby --electron</code>
                 </div>
                 <figure class="trace-media">
-                  <div class="media-frame">
-                    <img src="screenshot/img-filter-en.png" width="1420" height="827" alt="buildby filter result listing Electron applications with versions, sizes, bundle identifiers, and paths" loading="lazy" data-src-en="screenshot/img-filter-en.png" data-src-zh="screenshot/img-filter.png" data-width-en="1420" data-height-en="827" data-width-zh="1500" data-height-zh="492" data-i18n-alt="filterImageAlt">
-                    <span class="media-scan" aria-hidden="true"></span>
+                  <div class="media-frame terminal-surface terminal-frame terminal-long-frame terminal-electron-frame" id="terminal-electron" data-terminal role="region" aria-label="Animated terminal running buildby --electron and reproducing its 19-application table" data-i18n-aria-label="filterTerminalAria">
+                    <div class="terminal-window-bar" data-terminal-line style="--line: 0">
+                      <span aria-hidden="true"><i></i><i></i><i></i></span>
+                      <code>buildby — Electron</code>
+                      <button class="terminal-replay" type="button" data-terminal-replay="terminal-electron" aria-label="Replay terminal command" data-i18n-aria-label="terminalReplayAria"><span aria-hidden="true">↻</span><span class="terminal-replay-label" data-i18n="terminalReplay">Replay</span></button>
+                    </div>
+                    <div class="terminal-scroll-window" tabindex="0">
+                      <div class="terminal-stream">
+                        <div class="terminal-command" data-terminal-line style="--line: 1">
+                          <span class="terminal-prompt" aria-hidden="true">❯</span>
+                          <code>buildby --electron</code>
+                          <span class="terminal-cursor" aria-hidden="true"></span>
+                        </div>
+                        <p class="terminal-status" data-terminal-line style="--line: 2; --terminal-delay: 0.9s">
+                          <span aria-hidden="true">✔</span>
+                          <span data-i18n="terminalElectronComplete">Scan complete</span>
+                        </p>
+                        <pre class="terminal-raw-output terminal-electron-output" data-terminal-line style="--line: 3; --terminal-delay: 1.05s" data-i18n="terminalElectronOutput">⚡ Electron applications — 19 total
+
+Application                    Version       Size        Bundle ID / Path
+─────────────────────────────────────────────────────────────────────────
+ChatGPT                       26.715.31925  1.38 GB     com.openai.codex</pre>
+                      </div>
+                    </div>
                   </div>
                   <figcaption><span data-i18n="filterCaption">Framework filter / identity table</span><code data-i18n="filterRuntime">ELECTRON</code></figcaption>
                 </figure>
