@@ -23,7 +23,8 @@
     "buildby": "bin/buildby.js"
   },
   "scripts": {
-    "start": "node bin/buildby.js"
+    "start": "node bin/buildby.js",
+    "test": "node --test"
   },
   "keywords": [
     "cli",

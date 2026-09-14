@@ -1,12 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { execFileSync, spawnSync } from 'child_process';
+import { execFile, execFileSync, spawnSync } from 'child_process';
 import { Worker } from 'worker_threads';
 import { detectStack } from './detectors/index.js';
 import { LOCALE } from './i18n.js';
 
-const CACHE_SCHEMA_VERSION = 1;
+// Entries are keyed on app version + executable fingerprint, neither of which
+// changes when detection logic does. Bump this whenever detectors are added or
+// their verdicts change, or upgrades would keep serving the old classification.
+const CACHE_SCHEMA_VERSION = 3;
 const CACHE_FILE_NAME = 'analysis-cache-v1.json';
 
 /**
@@ -49,36 +52,54 @@ function getAppSize(appPath) {
 }
 
 /**
+ * Promise wrapper around execFile that resolves to '' on any failure, matching
+ * the tolerant behaviour of the synchronous helpers here.
+ */
+function execFileAsync(command, args, options) {
+  return new Promise((resolve) => {
+    execFile(command, args, options, (err, stdout) => resolve(err ? '' : String(stdout)));
+  });
+}
+
+/**
  * Get disk usage for many app directories in one pass.
  * On macOS/Linux this avoids spawning `du` once per app.
+ *
+ * Async on purpose: `du` across a full /Applications takes seconds, and running
+ * it synchronously froze the progress spinner because the event loop could not
+ * turn. The Windows fallback yields periodically for the same reason.
+ *
  * @param {string[]} appPaths
- * @returns {Map<string, number>}
+ * @returns {Promise<Map<string, number>>}
  */
-function getAppSizes(appPaths) {
+async function getAppSizes(appPaths) {
   const sizes = new Map();
   if (appPaths.length === 0) return sizes;
 
   if (process.platform !== 'win32') {
-    try {
-      const out = execFileSync('du', ['-sk', ...appPaths], {
-        timeout: Math.max(5000, appPaths.length * 250),
-        stdio: ['ignore', 'pipe', 'ignore'],
-        maxBuffer: Math.max(1024 * 1024, appPaths.length * 1024),
-      }).toString();
+    const out = await execFileAsync('du', ['-sk', ...appPaths], {
+      timeout: Math.max(5000, appPaths.length * 250),
+      maxBuffer: Math.max(1024 * 1024, appPaths.length * 1024),
+    });
 
-      for (const line of out.trim().split('\n')) {
-        const match = line.match(/^(\d+)\s+(.+)$/);
-        if (!match) continue;
-        const kb = parseInt(match[1], 10);
-        if (!isNaN(kb)) sizes.set(match[2], kb * 1024);
-      }
-    } catch {
-      // Fall back per app below.
+    for (const line of out.trim().split('\n')) {
+      const match = line.match(/^(\d+)\s+(.+)$/);
+      if (!match) continue;
+      const kb = parseInt(match[1], 10);
+      if (!isNaN(kb)) sizes.set(match[2], kb * 1024);
     }
   }
 
+  let sinceYield = 0;
   for (const appPath of appPaths) {
-    if (!sizes.has(appPath)) sizes.set(appPath, getAppSize(appPath));
+    if (sizes.has(appPath)) continue;
+    sizes.set(appPath, getAppSize(appPath));
+
+    // Let the spinner repaint between expensive per-app walks.
+    if (++sinceYield >= 4) {
+      sinceYield = 0;
+      await new Promise((resolve) => setImmediate(resolve));
+    }
   }
 
   return sizes;
@@ -518,6 +539,7 @@ export function analyzeApp(app, {
     platform,
     stack: detection.id,
     stackName: detection.name,
+    variant: detection.variant ?? null,
     category: detection.category,
     confidence: detection.confidence,
     evidence: detection.evidence,
@@ -538,6 +560,7 @@ function createFailedResult(app) {
     platform: app.platform,
     stack: 'unknown',
     stackName: 'Unknown',
+    variant: null,
     category: 'unknown',
     confidence: 'low',
     evidence: ['Analysis failed'],
@@ -552,14 +575,63 @@ function createFailedResult(app) {
 }
 
 /**
+ * Analyze a handful of apps on a worker thread, keeping the main thread free.
+ *
+ * Single-app inspection collects signature and notarization, and `spctl` alone
+ * can take many seconds — running that synchronously froze the spinner. One
+ * worker handles the whole list sequentially; these queries match very few apps.
+ *
+ * Deliberately bypasses the analysis cache, matching the previous synchronous
+ * behaviour: cached batch entries carry no signature data.
+ *
+ * @param {{ name: string, path: string, platform: string }[]} apps
+ * @param {{ includeSignature?: boolean }} [opts]
+ * @returns {Promise<AnalysisResult[]>} results for the apps that analyzed cleanly
+ */
+export function analyzeAppsDetailed(apps, { includeSignature = true } = {}) {
+  if (apps.length === 0) return Promise.resolve([]);
+
+  return new Promise((resolve) => {
+    const worker = new Worker(new URL('./analyzeWorker.js', import.meta.url));
+    const results = [];
+    let index = 0;
+
+    const done = () => {
+      worker.terminate();
+      resolve(results);
+    };
+
+    const next = () => {
+      if (index >= apps.length) return done();
+      worker.postMessage({
+        id: index,
+        app: apps[index++],
+        includeNativeDetails: true,
+        includeLocalizedName: true,
+        includeSignature,
+      });
+    };
+
+    worker.on('message', ({ result }) => {
+      if (result && result.stack !== 'unknown') results.push(result);
+      next();
+    });
+
+    worker.on('error', () => done());
+
+    next();
+  });
+}
+
+/**
  * Analyze multiple apps with a progress callback.
  * @param {{ name: string, path: string, platform: string }[]} apps
  * @param {(current: number, total: number, name: string) => void} [onProgress]
  * @param {{ includeNativeDetails?: boolean, useCache?: boolean }} [opts]
  * @returns {Promise<AnalysisResult[]>}
  */
-export function analyzeApps(apps, onProgress, { includeNativeDetails = false, useCache = true } = {}) {
-  if (apps.length === 0) return Promise.resolve([]);
+export async function analyzeApps(apps, onProgress, { includeNativeDetails = false, useCache = true } = {}) {
+  if (apps.length === 0) return [];
 
   const cache = useCache ? loadAnalysisCache() : null;
   let cacheDirty = false;
@@ -595,7 +667,7 @@ export function analyzeApps(apps, onProgress, { includeNativeDetails = false, us
 
   if (jobs.length === 0) return Promise.resolve(finish());
 
-  const sizeMap = getAppSizes(jobs.map((job) => job.app.path));
+  const sizeMap = await getAppSizes(jobs.map((job) => job.app.path));
   for (const job of jobs) {
     job.sizeBytes = sizeMap.get(job.app.path);
   }

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { listFrameworksDeep } from './shared.js';
 
 export const meta = {
   id: 'qt',
@@ -28,30 +29,28 @@ export function detect(appPath, platform) {
       'Qt6Core.framework',
     ];
 
-    try {
-      const items = fs.readdirSync(frameworksDir);
+    // Scan one level deep: vendors sometimes group Qt in a subdirectory
+    // (WPS Office ships QtCoreKso.framework under Frameworks/office6/).
+    const items = listFrameworksDeep(frameworksDir).map((entry) => entry.name);
 
-      // Qt frameworks (e.g. QtCore.framework, Qt6Core.framework)
-      for (const item of items) {
-        if (item.startsWith('Qt') && item.endsWith('.framework')) {
-          evidence.push(item);
-          if (evidence.length >= 3) break;
-        }
+    // Qt frameworks (e.g. QtCore.framework, Qt6Core.framework, QtCoreKso.framework)
+    for (const item of items) {
+      if (item.startsWith('Qt') && item.endsWith('.framework')) {
+        evidence.push(item);
+        if (evidence.length >= 3) break;
       }
+    }
 
-      // Some Qt apps ship Qt as dylib instead of framework
-      if (evidence.length === 0) {
-        const qtLibs = items.filter((item) => item.startsWith('libQt') && item.endsWith('.dylib'));
-        if (qtLibs.length > 0) {
-          evidence.push(...qtLibs.slice(0, 2));
-        }
+    // Some Qt apps ship Qt as dylib instead of framework
+    if (evidence.length === 0) {
+      const qtLibs = items.filter((item) => item.startsWith('libQt') && item.endsWith('.dylib'));
+      if (qtLibs.length > 0) {
+        evidence.push(...qtLibs.slice(0, 2));
       }
+    }
 
-      if (fs.existsSync(path.join(appPath, 'Contents', 'Resources', 'qt.conf'))) {
-        evidence.push('qt.conf');
-      }
-    } catch {
-      // no frameworks dir
+    if (fs.existsSync(path.join(appPath, 'Contents', 'Resources', 'qt.conf'))) {
+      evidence.push('qt.conf');
     }
   } else if (platform === 'win32') {
     const qtDlls = [

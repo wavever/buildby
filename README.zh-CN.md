@@ -118,6 +118,65 @@ buildby -a
 buildby --all --no-cache   # 强制重新分析
 ```
 
+#### JSON 输出
+
+任意模式加上 `--json` 即可在 stdout 得到机器可读输出。进度与错误信息走 stderr，因此 stdout 始终可以安全地管道传递。
+
+```bash
+buildby discord --json
+buildby --all --json | jq '.summary.stacks'
+buildby --electron --json | jq -r '.apps[].name'
+```
+
+所有模式返回同一个信封结构，消费方无需按模式分支处理：
+
+```json
+{
+  "schema": 1,
+  "buildbyVersion": "1.2.1",
+  "platform": "darwin",
+  "query": { "mode": "app", "value": "calibre" },
+  "apps": [
+    {
+      "name": "calibre",
+      "stack": "python",
+      "stackName": "Python (PyQt)",
+      "variant": "PyQt",
+      "category": "cross-platform",
+      "confidence": "high",
+      "evidence": ["Python.framework", "PyQt UI toolkit"],
+      "bundleId": "net.kovidgoyal.calibre",
+      "version": "7.22.0",
+      "sizeBytes": 1052946432
+    }
+  ],
+  "summary": null
+}
+```
+
+消费方须知：
+
+- **`stack` 才是稳定标识符** —— 请基于它判断，而不是 `stackName`。`stackName` 是展示用名称，`variant` 承载子技术（如 `PyQt`、`Rust · AppKit`）。
+- **`evidence` 是给人看的**，不属于稳定 API，请勿解析。
+- 体积为原始字节数；JSON 输出中不含任何本地化文案。
+- `summary` 仅在 `--all` 下填充，其余模式为 `null`。
+- 签名与公证信息仅在单应用模式采集（与报告行为一致），因此 `--all` 下为 `null`。
+- `schema` 带版本号，请在依赖字段语义前先校验。
+
+退出码（**仅在 `--json` 下生效**，不影响既有用法）：
+
+| 退出码 | 含义 |
+| ------ | ---- |
+| `0` | 至少匹配到一个应用 |
+| `1` | 无匹配（payload 仍然合法，`apps: []`） |
+| `2` | 错误 —— 平台不支持、路径不存在、分析失败 |
+
+出错时 stdout 返回可解析的错误对象，而不是 `apps`：
+
+```json
+{ "schema": 1, "error": { "code": "path_not_found", "message": "Path not found: /nope" } }
+```
+
 #### 配置文件
 
 BuildBy 会在首次运行时自动创建默认 JSON 配置文件，之后运行时会读取它：
@@ -188,14 +247,24 @@ buildby --path "C:\Program Files\SomeApp"
 | ⚡ **Electron** | Node.js + Chromium | `Electron Framework.framework`、`app.asar` |
 | 🐦 **Flutter** | Google 跨平台 UI 工具包 | `FlutterMacOS.framework`、`flutter_windows.dll` |
 | 🌐 **CEF** | Chromium Embedded Framework | `Chromium Embedded Framework.framework`、`libcef.dll` |
-| 🦀 **Tauri** | Rust + 系统 WebView | `otool -L` 检测 `WebKit.framework` + 资源目录 / Windows 上 `WebView2Loader.dll` |
-| 🔷 **Qt** | C++ 跨平台框架 | `Qt*.framework`、`Qt5Core.dll` / `Qt6Core.dll` |
-| 🧩 **wxWidgets** | C++ 跨平台 GUI 库 | macOS 上 `libwx*.dylib`，Windows 上 `wxmswXXu_*.dll` 等 |
-| ☕ **JVM** | Java/Kotlin/Scala | `jbr/`、`libjvm.dylib`、大量 `.jar` 文件 |
-| 🔵 **.NET** | Microsoft .NET / MAUI / WPF | `MonoBundle/`、`coreclr.dll`、`.dll` 组合特征 |
+| 🌐 **Chromium** | 直接基于 Chromium 构建 | `.pak` 资源包 + V8 快照（已排除 Qt WebEngine） |
 | 🟩 **NW.js** | Node.js + Chromium（原 node‑webkit） | `nwjs Framework.framework`、`app.nw` |
 | ⚛️ **React Native** | React Native 桌面端实现 | `React.framework`、`Hermes.framework` / `hermes.dll` |
-| 🖥️ **Native** | 平台原生技术 | 未命中任何跨平台特征时的兜底分类 |
+| 🦀 **Tauri** | Rust + 系统 WebView | 二进制中的 Tauri crate 特征 / Windows 上 `WebView2Loader.dll` |
+| 🐹 **Wails** | Go + 系统 WebView | 二进制中的 `github.com/wailsapp/wails` |
+| 🔷 **Qt** | C++ 跨平台框架 | `Qt*.framework`（含嵌套目录）、`Qt5Core.dll` / `Qt6Core.dll` |
+| 🟫 **GTK** | GNOME 控件工具包 | `libgtk-3/4.dylib`、`libgtk-3-0.dll` |
+| 🧩 **wxWidgets** | C++ 跨平台 GUI 库 | macOS 上 `libwx*.dylib`，Windows 上 `wxmswXXu_*.dll` 等 |
+| 🎵 **JUCE** | 音频应用与插件宿主 C++ 框架 | 二进制中的 `JUCE v` / `juce::` 特征 |
+| 🐍 **Python** | py2app / PyInstaller / 内置 CPython | `__boot__.py`、`base_library.zip`、`Python.framework` |
+| ☕ **JVM** | Java/Kotlin/Scala | `jbr/`、`libjvm.dylib`、`lib/` `app/` `Java/` 下的 `.jar` |
+| 🟣 **Compose Multiplatform** | 基于 Skia 的 Kotlin UI 框架 | `libskiko-macos-*.dylib`、`skiko-awt-runtime-*.jar` |
+| 🔵 **.NET** | Microsoft .NET / MAUI / WPF | `MonoBundle/`、`coreclr.dll`、`.dll` 组合特征 |
+| 🦅 **Avalonia** | 跨平台 .NET UI 框架 | `Avalonia*.dll`、`libAvalonia*` |
+| 🎮 **Unity** | Unity 游戏引擎 | `UnityPlayer.dll`、`Data/` 目录结构 |
+| 🎯 **Unreal Engine** | Epic 虚幻引擎 UE4 / UE5 | `Content/Paks/*.pak`、`Contents/UE5/` |
+| 🤖 **Godot** | Godot 游戏引擎 | `*.pck` 归档 + 二进制中的引擎特征 |
+| 🖥️ **Native** | 平台原生技术 | 兜底分类；可区分 Swift / Objective-C / Rust / Go |
 
 ### 平台支持
 

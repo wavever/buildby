@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execCached } from '../commandCache.js';
+import { binaryContainsAny } from './shared.js';
 
 export const meta = {
   id: 'native',
@@ -10,6 +11,13 @@ export const meta = {
   description: 'Built with platform-native technologies (Swift/Objective-C on macOS, Win32/MFC/WinUI on Windows)',
   website: null,
 };
+
+// Compiler-embedded source paths, present in release builds of both toolchains.
+const RUST_MARKERS = ['cargo/registry/src/', 'library/std/src/', 'rust_begin_unwind'];
+const GO_MARKERS = ['Go build ID:', 'runtime.gopanic'];
+
+// Bound the probe so a full scan does not stall on multi-hundred-MB binaries.
+const LANG_PROBE_MAX_BYTES = 256 * 1024 * 1024;
 
 /**
  * Run otool -L on a Mach-O binary and return the raw output.
@@ -112,6 +120,20 @@ function detectMacOSDetails(appPath) {
 
   const isSwift = hasSwiftBundled || hasSwiftSystem;
 
+  // ── Phase 3: language probe for non-Swift binaries ────────────────────────
+  // A Mach-O app that links AppKit but ships no Swift runtime is not
+  // necessarily Objective-C — Rust (Zed) and Go compile to the same shape.
+  // Only probe when Swift is absent, and cap the read so huge binaries stay
+  // cheap during full scans.
+  let compiledLang = null;
+  if (!isSwift && execPath) {
+    const marker = binaryContainsAny(execPath, RUST_MARKERS.concat(GO_MARKERS), {
+      maxBytes: LANG_PROBE_MAX_BYTES,
+    });
+    if (marker && RUST_MARKERS.includes(marker)) compiledLang = 'Rust';
+    else if (marker) compiledLang = 'Go';
+  }
+
   // ── Determine UI framework ────────────────────────────────────────────────
   let uiFramework = null;
 
@@ -131,15 +153,18 @@ function detectMacOSDetails(appPath) {
     evidence.push(`Swift runtime (${swiftLibCount} bundled libs)`);
   } else if (isSwift) {
     evidence.push('Swift (system runtime)');
+  } else if (compiledLang === 'Rust') {
+    evidence.push('Rust toolchain paths in binary');
+  } else if (compiledLang === 'Go') {
+    evidence.push('Go build metadata in binary');
   } else {
     evidence.push('Objective-C (no Swift runtime detected)');
   }
 
   // ── Build display name ────────────────────────────────────────────────────
-  const lang = isSwift ? 'Swift' : 'Objective-C';
-  const name = uiFramework
-    ? `Native (${lang} · ${uiFramework})`
-    : `Native (${lang})`;
+  const lang = isSwift ? 'Swift' : (compiledLang || 'Objective-C');
+  const variant = uiFramework ? `${lang} · ${uiFramework}` : lang;
+  const name = `Native (${variant})`;
 
   // ── Info.plist ────────────────────────────────────────────────────────────
   const plistPath = path.join(appPath, 'Contents', 'Info.plist');
@@ -147,7 +172,7 @@ function detectMacOSDetails(appPath) {
     evidence.push('Info.plist present');
   }
 
-  return { name, evidence };
+  return { name, variant, evidence };
 }
 
 export function detect(appPath, platform, { includeNativeDetails = true } = {}) {
@@ -160,10 +185,11 @@ export function detect(appPath, platform, { includeNativeDetails = true } = {}) 
       };
     }
 
-    const { name, evidence } = detectMacOSDetails(appPath);
+    const { name, variant, evidence } = detectMacOSDetails(appPath);
     return {
       ...meta,
       name,
+      variant,
       confidence: 'medium',
       evidence,
     };

@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { execCached } from '../commandCache.js';
+import { binaryContainsAny, resolveWindowsExecutable } from './shared.js';
+
+const TAURI_MARKERS = ['tauri-runtime-wry', 'tauri::', '/tauri-'];
 
 export const meta = {
   id: 'tauri',
@@ -33,12 +36,7 @@ function containsTauriSignature(binaryPath) {
     timeout: 5000,
     maxBuffer: 2 * 1024 * 1024,
   });
-  const markers = [
-    'tauri-runtime-wry',
-    'tauri::',
-    '/tauri-',
-  ];
-  return markers.some((m) => output.includes(m));
+  return TAURI_MARKERS.some((m) => output.includes(m));
 }
 
 export function detect(appPath, platform) {
@@ -151,6 +149,14 @@ export function detect(appPath, platform) {
       }
     } catch {
       // ignore
+    }
+
+    // WebView2 alone means nothing (any WebView2 host ships it), so the
+    // verdict below requires the Tauri crate signature. Probe the exe for it —
+    // without this, Windows could never satisfy that requirement.
+    const exePath = resolveWindowsExecutable(appPath);
+    if (exePath && binaryContainsAny(exePath, TAURI_MARKERS)) {
+      evidence.push('Tauri framework signature in binary');
     }
   }
 

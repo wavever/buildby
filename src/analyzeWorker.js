@@ -1,11 +1,20 @@
 import { parentPort } from 'worker_threads';
 import { analyzeApp } from './analyzer.js';
 
-parentPort.on('message', ({ id, app, includeNativeDetails, sizeBytes }) => {
+parentPort.on('message', ({
+  id,
+  app,
+  includeNativeDetails,
+  sizeBytes,
+  // Batch scans skip both for speed; single-app inspection opts in.
+  includeSignature = false,
+  includeLocalizedName = false,
+}) => {
   try {
     const result = analyzeApp(app, {
-      includeLocalizedName: false,
+      includeLocalizedName,
       includeNativeDetails,
+      includeSignature,
       sizeBytes,
     });
     parentPort.postMessage({ id, result });
@@ -18,6 +27,7 @@ parentPort.on('message', ({ id, app, includeNativeDetails, sizeBytes }) => {
         platform: app.platform,
         stack: 'unknown',
         stackName: 'Unknown',
+        variant: null,
         category: 'unknown',
         confidence: 'low',
         evidence: ['Analysis failed'],

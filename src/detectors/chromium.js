@@ -18,6 +18,15 @@ const SKIP_FRAMEWORKS = new Set([
 ]);
 
 /**
+ * QtWebEngine embeds Chromium, so its framework carries .pak files and a V8
+ * snapshot. Attributing those to "Chromium" hides the real stack — an app
+ * shipping QtWebEngineCore.framework is a Qt app. Let the Qt detector own it.
+ */
+function isQtFramework(name) {
+  return name.startsWith('Qt');
+}
+
+/**
  * Resolve the versioned content root inside a macOS .framework bundle.
  * Tries Versions/Current (standard symlink), then the first Versions/* subdir.
  */
@@ -47,7 +56,7 @@ export function detect(appPath, platform) {
       const items = fs.readdirSync(frameworksDir);
 
       for (const item of items) {
-        if (!item.endsWith('.framework') || SKIP_FRAMEWORKS.has(item)) continue;
+        if (!item.endsWith('.framework') || SKIP_FRAMEWORKS.has(item) || isQtFramework(item)) continue;
 
         const fwPath = path.join(frameworksDir, item);
         const basePath = resolveFrameworkBase(fwPath);

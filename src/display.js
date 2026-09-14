@@ -18,6 +18,8 @@ const STACK_FILTER_FLAGS = {
   jvm: '-j',
   dotnet: '-d',
   tauri: '-t',
+  python: '-p',
+  gtk: '-g',
   native: '-n',
 };
 const GROUP_PREVIEW_LIMIT = 8;
@@ -36,6 +38,14 @@ const STACK_COLORS = {
   dotnet: chalk.hex('#9B59B6'),
   nwjs: chalk.hex('#1ABC9C'),
   reactnative: chalk.hex('#61DAFB'),
+  python: chalk.hex('#3776AB'),
+  gtk: chalk.hex('#729FCF'),
+  wails: chalk.hex('#00ADD8'),
+  compose: chalk.hex('#7F52FF'),
+  avalonia: chalk.hex('#8B44AC'),
+  juce: chalk.hex('#8DC63F'),
+  godot: chalk.hex('#478CBF'),
+  unreal: chalk.hex('#0E1128'),
   native: chalk.white,
   unknown: chalk.gray,
 };
@@ -54,6 +64,14 @@ const STACK_ICONS = {
   dotnet: '🔵',
   nwjs: '🟩',
   reactnative: '⚛️',
+  python: '🐍',
+  gtk: '🟫',
+  wails: '🐹',
+  compose: '🟣',
+  avalonia: '🦅',
+  juce: '🎵',
+  godot: '🤖',
+  unreal: '🎯',
   native: '🖥️',
   unknown: '❓',
 };

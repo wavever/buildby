@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Detector fixtures pass the target platform explicitly, so the macOS
+        # and Windows code paths are exercised on every runner. Running all
+        # three still catches genuine platform differences (path separators,
+        # symlink handling, case sensitivity).
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        node: [20, 22]
+        # NOTE: package.json declares engines ">=18" but this matrix starts at
+        # 20. Node 18 is EOL; either extend the matrix or raise engines.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: npm install
+
+      - run: npm test

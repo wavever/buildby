@@ -118,6 +118,66 @@ Batch scans use a local analysis cache. If an app's version and main executable 
 buildby --all --no-cache   # Force a fresh analysis
 ```
 
+### JSON output
+
+Add `--json` to any mode to get machine-readable output on stdout. Progress and
+errors stay on stderr, so stdout is always safe to pipe.
+
+```bash
+buildby discord --json
+buildby --all --json | jq '.summary.stacks'
+buildby --electron --json | jq -r '.apps[].name'
+```
+
+Every mode returns the same envelope, so consumers never branch on shape:
+
+```json
+{
+  "schema": 1,
+  "buildbyVersion": "1.2.1",
+  "platform": "darwin",
+  "query": { "mode": "app", "value": "calibre" },
+  "apps": [
+    {
+      "name": "calibre",
+      "stack": "python",
+      "stackName": "Python (PyQt)",
+      "variant": "PyQt",
+      "category": "cross-platform",
+      "confidence": "high",
+      "evidence": ["Python.framework", "PyQt UI toolkit"],
+      "bundleId": "net.kovidgoyal.calibre",
+      "version": "7.22.0",
+      "sizeBytes": 1052946432
+    }
+  ],
+  "summary": null
+}
+```
+
+Notes for consumers:
+
+- **`stack` is the stable identifier** — key on it, not on `stackName`. `stackName` is a display label and `variant` carries the sub-technology (`PyQt`, `Rust · AppKit`).
+- **`evidence` is human-oriented** and not a stable API. Do not parse it.
+- Sizes are raw bytes; no localized text appears in JSON output.
+- `summary` is populated for `--all` only; it is `null` elsewhere.
+- Signature and notarization are collected for single-app modes only, matching the report behaviour, so they are `null` under `--all`.
+- `schema` is versioned — check it before trusting field semantics.
+
+Exit codes (applied under `--json` only, so existing usage is unaffected):
+
+| Code | Meaning |
+| ---- | ------- |
+| `0`  | At least one app matched |
+| `1`  | No apps matched (payload still valid, `apps: []`) |
+| `2`  | Error — unsupported platform, missing path, analysis failure |
+
+On error, stdout carries a parseable error object instead of `apps`:
+
+```json
+{ "schema": 1, "error": { "code": "path_not_found", "message": "Path not found: /nope" } }
+```
+
 ### Configuration
 
 BuildBy creates a default JSON config file on first run, then reads it on later runs:
@@ -184,18 +244,29 @@ buildby --path "C:\Program Files\SomeApp"
 ## Detected Tech Stacks
 
 
-| Stack               | Description                      | Detection Method                                        |
-| ------------------- | -------------------------------- | ------------------------------------------------------- |
-| ⚡ **Electron**      | Node.js + Chromium               | `Electron Framework.framework`, `app.asar`              |
-| 🐦 **Flutter**      | Google's UI toolkit              | `FlutterMacOS.framework`, `flutter_windows.dll`         |
-| 🌐 **CEF**          | Chromium Embedded Framework      | `Chromium Embedded Framework.framework`, `libcef.dll`   |
-| 🦀 **Tauri**        | Rust + system WebView            | Binary strings + `resources/` dir, `WebView2Loader.dll` |
-| 🔷 **Qt**           | C++ cross-platform               | `Qt*.framework`, `Qt5Core.dll` / `Qt6Core.dll`          |
-| ☕ **JVM**           | Java/Kotlin/Scala                | `jbr/`, `libjvm.dylib`, `.jar` files                    |
-| 🔵 **.NET**         | Microsoft .NET / MAUI / WPF      | `MonoBundle/`, `coreclr.dll`, `.dll` files              |
-| 🟩 **NW.js**        | Node.js + Chromium (node-webkit) | `nwjs Framework.framework`, `app.nw`                    |
-| ⚛️ **React Native** | Facebook's React for desktop     | `React.framework`, `hermes.dll`                         |
-| 🖥️ **Native**      | Platform-native technologies     | Fallback when no cross-platform signatures found        |
+| Stack                        | Description                       | Detection Method                                          |
+| ---------------------------- | --------------------------------- | --------------------------------------------------------- |
+| ⚡ **Electron**               | Node.js + Chromium                | `Electron Framework.framework`, `app.asar`                |
+| 🐦 **Flutter**               | Google's UI toolkit               | `FlutterMacOS.framework`, `flutter_windows.dll`           |
+| 🌐 **CEF**                   | Chromium Embedded Framework       | `Chromium Embedded Framework.framework`, `libcef.dll`     |
+| 🌐 **Chromium**              | Built directly on Chromium        | `.pak` packs + V8 snapshot (Qt WebEngine excluded)        |
+| 🟩 **NW.js**                 | Node.js + Chromium (node-webkit)  | `nwjs Framework.framework`, `app.nw`                      |
+| ⚛️ **React Native**          | Facebook's React for desktop      | `React.framework`, `hermes.dll`                           |
+| 🦀 **Tauri**                 | Rust + system WebView             | Tauri crate markers in binary, `WebView2Loader.dll`       |
+| 🐹 **Wails**                 | Go + system WebView               | `github.com/wailsapp/wails` in binary                     |
+| 🔷 **Qt**                    | C++ cross-platform                | `Qt*.framework` (incl. nested), `Qt5Core.dll` / `Qt6Core.dll` |
+| 🟫 **GTK**                   | GNOME widget toolkit              | `libgtk-3/4.dylib`, `libgtk-3-0.dll`                      |
+| 🧩 **wxWidgets**             | C++ wrapper over native widgets   | `libwx*.dylib`, `wxmswXXu_*.dll`                          |
+| 🎵 **JUCE**                  | C++ audio apps and plug-in hosts  | `JUCE v` / `juce::` markers in binary                     |
+| 🐍 **Python**                | py2app / PyInstaller / CPython    | `__boot__.py`, `base_library.zip`, `Python.framework`     |
+| ☕ **JVM**                    | Java/Kotlin/Scala                 | `jbr/`, `libjvm.dylib`, `.jar` in `lib/` `app/` `Java/`   |
+| 🟣 **Compose Multiplatform** | Kotlin UI via Skia                | `libskiko-macos-*.dylib`, `skiko-awt-runtime-*.jar`       |
+| 🔵 **.NET**                  | Microsoft .NET / MAUI / WPF       | `MonoBundle/`, `coreclr.dll`, `.dll` files                |
+| 🦅 **Avalonia**              | Cross-platform .NET UI            | `Avalonia*.dll`, `libAvalonia*`                           |
+| 🎮 **Unity**                 | Unity game engine                 | `UnityPlayer.dll`, `Data/` layout                         |
+| 🎯 **Unreal Engine**         | Epic UE4 / UE5                    | `Content/Paks/*.pak`, `Contents/UE5/`                     |
+| 🤖 **Godot**                 | Godot game engine                 | `*.pck` archive + engine marker in binary                 |
+| 🖥️ **Native**               | Platform-native technologies      | Fallback; reports Swift / Objective-C / Rust / Go         |
 
 
 ## Platform Support

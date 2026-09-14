@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { listDir } from './shared.js';
 
 export const meta = {
   id: 'jvm',
@@ -48,6 +49,15 @@ export function detect(appPath, platform) {
         evidence.push('libjvm.dylib');
         break;
       }
+    }
+
+    // Legacy Apple Java bundle layout: Contents/Java/ holds the app's jars and
+    // the JRE comes from the system, so none of the runtime checks above fire.
+    // (Nutstore ships exactly this way.)
+    const javaDir = path.join(contentsDir, 'Java');
+    const javaJars = listDir(javaDir).filter((item) => item.endsWith('.jar'));
+    if (javaJars.length > 0) {
+      evidence.push(`${javaJars.length} .jar files in Java/ (Apple Java bundle)`);
     }
 
     // Check for .jar files in lib/

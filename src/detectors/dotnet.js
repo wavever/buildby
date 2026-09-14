@@ -34,17 +34,8 @@ export function detect(appPath, platform) {
       }
     }
 
-    // Avalonia UI (cross-platform .NET UI framework)
-    const frameworksDir = path.join(contentsDir, 'Frameworks');
-    try {
-      const items = fs.readdirSync(frameworksDir);
-      const avaloniaItems = items.filter((item) => item.toLowerCase().includes('avalonia'));
-      if (avaloniaItems.length > 0) {
-        evidence.push('Avalonia framework');
-      }
-    } catch {
-      // ignore
-    }
+    // Avalonia is a .NET stack too, but it has its own detector ahead of this
+    // one so the UI framework gets named instead of folding into WPF/MAUI.
 
     // .NET runtime bundled
     if (fs.existsSync(path.join(contentsDir, 'MacOS', 'libcoreclr.dylib'))) {
@@ -82,7 +73,6 @@ export function detect(appPath, platform) {
       'WindowsBase.dll',
       'System.Windows.Forms.dll',
       'Microsoft.Maui.dll',
-      'Avalonia.dll',
     ];
     for (const dll of dotnetDlls) {
       if (fs.existsSync(path.join(appPath, dll))) {
