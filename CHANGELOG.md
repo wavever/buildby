@@ -4,6 +4,52 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] — 2026-09-14
+
+### Added
+
+- Added `--json` for machine-readable output in every mode. All modes return one
+  envelope shape carrying a versioned `schema` field, so consumers never branch
+  on the payload. Progress and errors stay on stderr, leaving stdout safe to pipe.
+- Added `--json` exit codes: `0` when apps matched, `1` when none did, `2` on
+  error. Scoped to `--json` only, so existing interactive usage is unaffected.
+- Added detection for Python (py2app, PyInstaller, Nuitka, or a vendored CPython),
+  GTK, Wails, JUCE, Godot, Unreal Engine, and Compose Multiplatform.
+- Added Avalonia as its own stack, split out of the .NET detector so the UI
+  framework is named instead of folding into WPF/WinForms/MAUI.
+- Added a `variant` field that carries the sub-technology — Python's UI toolkit
+  (`Python (PyQt)`) and the native language/UI pair (`Native (Rust · AppKit)`) —
+  as structured data rather than only inside the display name.
+- Added `-p` / `--python` and `-g` / `--gtk` filter flags, plus long-form flags
+  for every other new stack.
+- Added the project's first test suite: 31 cases over detector fixtures, the JSON
+  payload, and binary-probe edge cases, with CI across macOS, Windows and Ubuntu.
+
+### Changed
+
+- Detection now covers 21 stacks, up from 13.
+- The progress spinner no longer freezes during analysis. App sizing is measured
+  asynchronously, and single-app inspection runs on a worker thread, so the event
+  loop stays free while `du` and `spctl` work.
+- `--all --json` collects the full native breakdown so `variant` does not depend
+  on which output mode was requested. This makes it slower than plain `--all`.
+- Bumped the analysis cache schema. Cache entries key on app version and
+  executable fingerprint, neither of which changes when detection logic does, so
+  upgrading otherwise kept serving the previous classification.
+
+### Fixed
+
+- Fixed Qt detection missing frameworks nested one level below
+  `Contents/Frameworks`, which made apps such as WPS Office fall through to the
+  native fallback.
+- Fixed JVM detection missing the legacy Apple `Contents/Java/` bundle layout
+  used by apps that ship jars there and rely on the system JRE.
+- Fixed QtWebEngine apps being reported as Chromium. QtWebEngine embeds Chromium,
+  so its resource packs and V8 snapshot were outranking the Qt detector.
+- Fixed native apps written in Rust or Go being reported as Objective-C.
+- Fixed Tauri detection never matching on Windows: the crate-signature probe ran
+  only on macOS, so the check that required it could never pass on Windows.
+
 ## [1.2.0] — 2026-05-30
 
 ### Added

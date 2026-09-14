@@ -133,7 +133,7 @@ buildby --electron --json | jq -r '.apps[].name'
 ```json
 {
   "schema": 1,
-  "buildbyVersion": "1.2.1",
+  "buildbyVersion": "1.3.0",
   "platform": "darwin",
   "query": { "mode": "app", "value": "calibre" },
   "apps": [
