@@ -61,6 +61,17 @@ node bin/buildby.js <command>
 
 > 早期发布名为 `desktop-app-build-by`，现已**弃用**，请改用 `npm i -g @wavever/buildby`。CLI 命令保持为 `buildby`。详情见 [CHANGELOG.md](./CHANGELOG.md)。
 
+#### 升级
+
+```bash
+buildby update           # 检查新版本并直接安装
+buildby update --check   # 仅检查是否有新版本，不安装
+```
+
+`update` 通过 npm 查询最新版本，因此会沿用你自己的 registry 镜像、代理与认证配置。如果当前运行的是 git 检出或 `npm link` 的副本，它会提示所在路径并停止，不会覆盖你的工作目录。
+
+> 由于 `update` 是子命令，名字恰好叫 "update" 的应用无法再按名称检测 —— 这种情况请用 `buildby --path`。
+
 ### 用法
 
 #### 查看单个应用
@@ -120,7 +131,7 @@ buildby --all --no-cache   # 强制重新分析
 
 #### JSON 输出
 
-任意模式加上 `--json` 即可在 stdout 得到机器可读输出。进度与错误信息走 stderr，因此 stdout 始终可以安全地管道传递。
+任意**检测模式**加上 `--json` 即可在 stdout 得到机器可读输出（`update` 是动作命令，没有 JSON 形式）。进度与错误信息走 stderr，因此 stdout 始终可以安全地管道传递。
 
 ```bash
 buildby discord --json
@@ -133,7 +144,7 @@ buildby --electron --json | jq -r '.apps[].name'
 ```json
 {
   "schema": 1,
-  "buildbyVersion": "1.3.0",
+  "buildbyVersion": "1.3.1",
   "platform": "darwin",
   "query": { "mode": "app", "value": "calibre" },
   "apps": [

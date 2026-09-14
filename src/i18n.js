@@ -137,6 +137,18 @@ const translations = {
     cmd_path: 'Specify a custom directory to scan',
     cmd_no_cache: 'Disable the local analysis cache',
     cmd_json: 'Output machine-readable JSON instead of a report',
+    cmd_update: 'Update buildby to the latest published version',
+    cmd_update_check: 'Only report whether an update exists, without installing',
+
+    // ── update command ───────────────────────────────────────────────────────
+    update_checking: 'Checking for updates…',
+    update_check_failed: 'Could not reach the npm registry',
+    update_check_hint: 'Check your network, then verify `npm view {pkg} version` works.',
+    update_up_to_date: 'buildby {version} is already the latest version',
+    update_available: 'Update available: {current} → {latest}',
+    update_local_install: 'This copy runs from {root}, which npm does not manage. Update it with git pull, or install the release with: npm i -g {pkg}',
+    update_failed: 'Update failed. Try running: npm i -g {pkg}@latest',
+    update_success: 'Updated to buildby {version}',
     cmd_filter: 'Show all apps built with {name}',
     cmd_appname: 'Name of the app to inspect (supports fuzzy match)',
 
@@ -255,6 +267,18 @@ const translations = {
     cmd_path: '指定要扫描的目录路径',
     cmd_no_cache: '禁用本地分析缓存',
     cmd_json: '输出机器可读的 JSON，而非终端报告',
+    cmd_update: '将 buildby 升级到最新发布版本',
+    cmd_update_check: '仅检查是否有新版本，不执行安装',
+
+    // ── update command ───────────────────────────────────────────────────────
+    update_checking: '正在检查更新…',
+    update_check_failed: '无法访问 npm registry',
+    update_check_hint: '请检查网络，并确认 `npm view {pkg} version` 可以正常执行。',
+    update_up_to_date: '当前已是最新版本 buildby {version}',
+    update_available: '发现新版本：{current} → {latest}',
+    update_local_install: '当前运行的副本位于 {root}，不由 npm 管理。请用 git pull 更新，或改为安装发布版：npm i -g {pkg}',
+    update_failed: '升级失败。可手动执行：npm i -g {pkg}@latest',
+    update_success: '已升级到 buildby {version}',
     cmd_filter: '显示所有使用 {name} 构建的应用',
     cmd_appname: '要查询的应用名称（支持模糊匹配）',
 

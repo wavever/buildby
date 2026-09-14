@@ -454,6 +454,13 @@ export function printWarning(message) {
 }
 
 /**
+ * Print a success message.
+ */
+export function printSuccess(message) {
+  console.log(chalk.green(`\n  ✔ ${message}\n`));
+}
+
+/**
  * Extract the sub-technology part from a native stackName.
  * e.g. "Native (Swift · SwiftUI)" → "Swift · SwiftUI"
  */

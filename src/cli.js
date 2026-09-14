@@ -9,6 +9,7 @@ import {
   printFilteredResults,
   printError,
   printWarning,
+  printSuccess,
 } from './display.js';
 import { ALL_STACK_METAS } from './detectors/index.js';
 import { t } from './i18n.js';
@@ -20,6 +21,14 @@ import {
   EXIT_ERROR,
   EXIT_NO_RESULTS,
 } from './json.js';
+import {
+  compareVersions,
+  detectInstallKind,
+  fetchLatestVersion,
+  getPackageRoot,
+  runGlobalInstall,
+  PACKAGE_NAME,
+} from './update.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json');
@@ -63,6 +72,18 @@ export function run() {
     const flags = shortFlag ? `-${shortFlag}, --${meta.id}` : `--${meta.id}`;
     program.option(flags, t('cmd_filter', { name: meta.name }));
   }
+
+  // ─── buildby update ───────────────────────────────────────────────────────
+  // Registered as a subcommand, so it takes precedence over the [appname]
+  // positional. The cost is that an app literally named "update" can no longer
+  // be inspected by name; --path still reaches it.
+  program
+    .command('update')
+    .description(t('cmd_update'))
+    .option('--check', t('cmd_update_check'))
+    .action(async (opts) => {
+      await handleUpdate(opts);
+    });
 
   // ─── buildby <appname> ────────────────────────────────────────────────────
   program.argument('[appname]', t('cmd_appname'));
@@ -290,4 +311,43 @@ async function handleFilterByStack(stackId, opts = {}) {
   }
 
   printFilteredResults(filtered, stackId);
+}
+
+async function handleUpdate({ check = false } = {}) {
+  const current = pkg.version;
+  const spinner = createSpinner(t('update_checking'));
+
+  const latest = await fetchLatestVersion();
+
+  if (!latest) {
+    spinner.fail(t('update_check_failed'));
+    printWarning(t('update_check_hint', { pkg: PACKAGE_NAME }));
+    process.exit(1);
+  }
+
+  if (compareVersions(latest, current) <= 0) {
+    spinner.succeed(t('update_up_to_date', { version: current }));
+    return;
+  }
+
+  spinner.succeed(t('update_available', { current, latest }));
+
+  if (check) return;
+
+  // An `npm link`ed or cloned copy is not npm's to replace — installing over it
+  // would quietly detach the user from the checkout they are working in.
+  if (detectInstallKind() !== 'npm') {
+    printWarning(t('update_local_install', { root: getPackageRoot(), pkg: PACKAGE_NAME }));
+    return;
+  }
+
+  console.log();
+  const { ok } = await runGlobalInstall();
+
+  if (!ok) {
+    printError(t('update_failed', { pkg: PACKAGE_NAME }));
+    process.exit(1);
+  }
+
+  printSuccess(t('update_success', { version: latest }));
 }

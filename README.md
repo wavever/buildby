@@ -61,6 +61,21 @@ node bin/buildby.js <command>
 
 > Previously published as `desktop-app-build-by`. That name is now **deprecated** — please switch to `npm i -g @wavever/buildby`. The CLI command stays `buildby`. See [CHANGELOG.md](./CHANGELOG.md) for details.
 
+### Update
+
+```bash
+buildby update           # Check for a newer release and install it
+buildby update --check   # Only report whether an update exists
+```
+
+`update` asks npm for the latest published version, so your own registry
+mirror, proxy and auth settings are respected. When the running copy is a git
+checkout or an `npm link`ed build, it reports the path and stops instead of
+installing over it.
+
+> Because `update` is a subcommand, an app literally named "update" can no
+> longer be inspected by name — use `buildby --path` for that.
+
 ## Usage
 
 ### Inspect a single app
@@ -120,7 +135,8 @@ buildby --all --no-cache   # Force a fresh analysis
 
 ### JSON output
 
-Add `--json` to any mode to get machine-readable output on stdout. Progress and
+Add `--json` to any inspection mode to get machine-readable output on stdout
+(`update` is an action command and has no JSON form). Progress and
 errors stay on stderr, so stdout is always safe to pipe.
 
 ```bash
@@ -134,7 +150,7 @@ Every mode returns the same envelope, so consumers never branch on shape:
 ```json
 {
   "schema": 1,
-  "buildbyVersion": "1.3.0",
+  "buildbyVersion": "1.3.1",
   "platform": "darwin",
   "query": { "mode": "app", "value": "calibre" },
   "apps": [

@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] — 2026-09-15
+
+### Added
+
+- Added `buildby update`, which checks for a newer published release and
+  installs it. `buildby update --check` reports without installing.
+- `update` queries npm for the latest version, so registry mirrors, proxies and
+  auth settings configured for npm are respected.
+- `update` refuses to install over a git checkout or an `npm link`ed build,
+  reporting the path instead of silently detaching it from the working copy.
+
+### Notes
+
+- `update` is a subcommand, so an app literally named "update" can no longer be
+  inspected by name. Use `buildby --path` for that case.
+- `update` is an action rather than a query and has no `--json` form.
+
 ## [1.3.0] — 2026-09-14
 
 ### Added
