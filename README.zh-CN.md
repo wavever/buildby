@@ -46,20 +46,28 @@
 | :---: | :---: | :---: |
 | ![](/screenshot/img-app.png) | ![](/screenshot/img-scan.png) | ![](/screenshot/img-filter.png) |
 
-### 安装
+### 快速开始与安装
+
+#### 无需安装，直接通过 npx 尝鲜
 
 ```bash
-# 从 npm 安装
+npx @wavever/buildby
+```
+
+#### 全局安装
+
+```bash
+# 从 npm 全局安装
 npm i -g @wavever/buildby
 
-# 克隆仓库并全局链接
+# 或克隆仓库并全局链接
 git clone https://github.com/wavever/buildby.git
 cd buildby
 npm install
 npm link
 
-# 或直接运行
-node bin/buildby.js <command>
+# 或直接从源码运行
+node bin/buildby.js
 ```
 
 > 早期发布名为 `desktop-app-build-by`，现已**弃用**，请改用 `npm i -g @wavever/buildby`。CLI 命令保持为 `buildby`。详情见 [CHANGELOG.md](./CHANGELOG.md)。
@@ -77,23 +85,34 @@ buildby update --check   # 仅检查是否有新版本，不安装
 
 ### 用法
 
-#### 交互式搜索（默认模式）
+#### 交互式终端模式（默认模式）
 
-在交互式终端中直接运行 `buildby` 不传参数，默认启动交互式模糊搜索：
+在交互式终端中直接运行 `buildby` 不传参数，默认启动交互式 TUI 浏览器：
 
 ```bash
-buildby                  # 默认进入交互式搜索已安装应用
-buildby -i               # 显式参数
+buildby                  # 默认进入交互式应用浏览与搜索
+buildby -i               # 显式交互模式
+buildby ui               # 别名
 ```
+
+- **全键盘操作**：使用方向键 `↑` / `↓` 浏览应用，按 `Enter` 查看选中应用的完整详情。
+- **即时输入过滤**：随时键入文字即可实时模糊搜索匹配应用。
+- **平滑视口滚动**：丝滑无闪烁地滚动浏览系统内全部已安装应用，带分页与位置提示（`▲` / `▼` 及 `[当前/总数]`）。
+- **快捷退出**：按 `q` 或 `Ctrl+C` 随时退出。
 
 #### 双应用对比（`vs` / `pk`）
 
 并排对比两个应用的技术栈、芯片架构、体积差与代码签名：
 
 ```bash
+# 直接指定两个应用进行对比
 buildby vs "ChatGPT" "Amphetamine"
 buildby pk "WeChat" "Discord"
 buildby compare "Visual Studio Code" "Sublime Text"
+
+# 或直接进入交互式多选对比模式
+buildby vs
+# → 方向键浏览，按空格键勾选两个应用，回车即可开始并排对比！
 ```
 
 #### 查看单个应用
@@ -149,6 +168,25 @@ buildby -a
 
 ```bash
 buildby --all --no-cache   # 强制重新分析
+```
+
+#### 导出格式
+
+##### Markdown 表格（`--markdown` / `--md`）
+
+将检测结果导出为整洁的 GitHub Flavored Markdown (GFM) 表格，包含详细信息及顶部的技术栈分布汇总表：
+
+```bash
+buildby --all --md > apps.md
+buildby discord --md
+```
+
+##### CSV 表格（`--csv`）
+
+将应用清单导出为标准 RFC 4180 CSV 格式，方便导入 Excel、Numbers 或数据分析工具：
+
+```bash
+buildby --all --csv > apps.csv
 ```
 
 #### JSON 输出
@@ -277,17 +315,19 @@ buildby --path "C:\Program Files\SomeApp"
 
 | 栈 | 说明 | 主要检测方式 |
 |----|------|--------------|
-| ⚡ **Electron** | Node.js + Chromium | `Electron Framework.framework`、`app.asar` |
-| 🐦 **Flutter** | Google 跨平台 UI 工具包 | `FlutterMacOS.framework`、`flutter_windows.dll` |
+| ⚡ **Electron** | Node.js + Chromium | `Electron Framework.framework`、`app.asar`、提取框架主版本号 |
+| 🐦 **Flutter** | Google 跨平台 UI 工具包 | `FlutterMacOS.framework`、`flutter_windows.dll`、提取 Flutter 版本 |
 | 🌐 **CEF** | Chromium Embedded Framework | `Chromium Embedded Framework.framework`、`libcef.dll` |
 | 🌐 **Chromium** | 直接基于 Chromium 构建 | `.pak` 资源包 + V8 快照（已排除 Qt WebEngine） |
 | 🟩 **NW.js** | Node.js + Chromium（原 node‑webkit） | `nwjs Framework.framework`、`app.nw` |
 | ⚛️ **React Native** | React Native 桌面端实现 | `React.framework`、`Hermes.framework` / `hermes.dll` |
-| 🦀 **Tauri** | Rust + 系统 WebView | 二进制中的 Tauri crate 特征 / Windows 上 `WebView2Loader.dll` |
+| 🦀 **Tauri** | Rust + 系统 WebView | 二进制中的 Tauri crate 特征、v1/v2 变体 / Windows 上 `WebView2Loader.dll` |
+| ⚡ **Neutralinojs** | 轻量级 HTML/JS 跨平台框架 | `neutralino.js`、`neutralino.config.json`、二进制特征 |
 | 🐹 **Wails** | Go + 系统 WebView | 二进制中的 `github.com/wailsapp/wails` |
-| 🔷 **Qt** | C++ 跨平台框架 | `Qt*.framework`（含嵌套目录）、`Qt5Core.dll` / `Qt6Core.dll` |
+| 🔷 **Qt** | C++ 跨平台框架 | `Qt*.framework`（含嵌套目录）、`Qt5Core.dll` / `Qt6Core.dll`、提取 Qt 版本 |
 | 🟫 **GTK** | GNOME 控件工具包 | `libgtk-3/4.dylib`、`libgtk-3-0.dll` |
 | 🧩 **wxWidgets** | C++ 跨平台 GUI 库 | macOS 上 `libwx*.dylib`，Windows 上 `wxmswXXu_*.dll` 等 |
+| 🧩 **Sciter** | 嵌入式 HTML/CSS 界面引擎 | `sciter.dll`、`libsciter.dylib`、二进制特征 |
 | 🎵 **JUCE** | 音频应用与插件宿主 C++ 框架 | 二进制中的 `JUCE v` / `juce::` 特征 |
 | 🐍 **Python** | py2app / PyInstaller / 内置 CPython | `__boot__.py`、`base_library.zip`、`Python.framework` |
 | ☕ **JVM** | Java/Kotlin/Scala | `jbr/`、`libjvm.dylib`、`lib/` `app/` `Java/` 下的 `.jar` |
@@ -297,35 +337,39 @@ buildby --path "C:\Program Files\SomeApp"
 | 🎮 **Unity** | Unity 游戏引擎 | `UnityPlayer.dll`、`Data/` 目录结构 |
 | 🎯 **Unreal Engine** | Epic 虚幻引擎 UE4 / UE5 | `Content/Paks/*.pak`、`Contents/UE5/` |
 | 🤖 **Godot** | Godot 游戏引擎 | `*.pck` 归档 + 二进制中的引擎特征 |
-| 🖥️ **Native** | 平台原生技术 | 兜底分类；可区分 Swift / Objective-C / Rust / Go |
+| 🖥️ **Native** | 平台原生技术 | 兜底分类；区分 Swift / Objective-C / Rust / Go / C++ / Win32 |
 
 ### 平台支持
 
 | 平台 | 应用发现位置 | 检测方式 |
 |------|--------------|----------|
-| macOS | `/Applications`、`~/Applications` | `Contents/Frameworks`、`Contents/Resources`、`otool -L`、`Info.plist` 元数据 |
-| Windows | `Program Files`、`Program Files (x86)`、`AppData/Local/Programs` | 扫描 `.exe` / `.dll`、特定框架文件与目录结构 |
+| macOS | `/Applications`、`~/Applications` | `Contents/Frameworks`、进程内纯 JS Mach-O 解析器、`Info.plist` 元数据 |
+| Windows | `Program Files`、`Program Files (x86)`、`AppData/Local/Programs` | PE 二进制头探测、扫描 `.exe` / `.dll`、特定框架文件与目录结构 |
+| Linux | `/usr/share/applications`、`~/.local/share/applications`、Flatpak、Snap | `.desktop` 桌面规范解析、ELF 二进制头解析、动态库依赖 |
 
 ### 工作原理（简要）
 
-检测完全基于 **文件系统**，不会做反汇编，也不需要管理员权限：
+检测完全基于 **文件系统与二进制头解析**，安全极速，不需要管理员权限：
 
-1. **扫描框架目录**：读取 `Contents/Frameworks/` 或应用目录下的 DLL，匹配各类已知框架的特征文件。  
-2. **资源文件模式**：查找 `app.asar`、`flutter_assets`、`app.nw` 等典型文件。  
-3. **JVM / .NET / 其他运行时检测**：识别打包的 JRE/JBR、.NET 运行时以及关联目录结构。  
-4. **Tauri / wxWidgets 等特定栈**：结合 `otool -L` / DLL 名称 + 资源分布做多信号判断。  
-5. **元数据提取**：从 `Info.plist` 解析 Bundle ID、版本号和展示名称。  
-6. **签名与公证**：macOS 上调用 `codesign -dv` 与 `spctl --assess`，Windows 上调用 PowerShell `Get-AuthenticodeSignature`，提取开发者 / Team ID / 签发者，以及 Apple 公证或 Authenticode 信任状态。  
-7. **兜底策略**：如果未匹配到任何跨平台特征，则将应用归类为原生技术栈。
+1. **扫描框架目录与动态库**：读取应用目录或 `Contents/Frameworks/` 下的 DLL / dylib，匹配各类已知框架的特征文件。  
+2. **纯 JS 二进制头解析**：使用内置流式解析器读取 Mach-O 动态库链接命令（`LC_LOAD_DYLIB`）、Universal 通用二进制、PE 与 ELF CPU 芯片架构，避免启动外部子进程。  
+3. **资源特征模式**：查找 `app.asar`、`flutter_assets`、`neutralino.js`、`app.nw` 等典型资源。  
+4. **框架版本提取**：从 Electron 资源包、Flutter 框架符号、Qt 动态库中自动提取运行时主版本号。  
+5. **JVM / 游戏引擎检测**：识别打包的 JRE/JBR、.NET 运行时、Unity Data、Unreal Engine Pak 与 Godot pck 归档。  
+6. **元数据提取**：从 `Info.plist`、PE 版本资源与 Linux `.desktop` 文件解析名称、版本号与 Bundle ID。  
+7. **签名与公证**：macOS 上调用 `codesign` 与 `spctl`，Windows 上调用 PowerShell `Get-AuthenticodeSignature`，提取开发者 / Team ID / 签发者，以及 Apple 公证或 Authenticode 信任状态。  
+8. **智能分析缓存**：根据应用版本与主程序指纹哈希缓存分析结果，重复扫描瞬间完成。  
+9. **兜底策略**：如果未匹配到任何跨平台框架特征，则将应用归类为原生技术栈（Native）。
 
 检测按照优先级顺序依次执行，特征越独特的框架越先匹配，以减少误报和重复分类。
 
 ### 环境要求
 
 - Node.js >= 18  
-- 当前系统为 macOS 或 Windows  
-- macOS 需要 `otool`、`codesign`、`spctl`（Xcode Command Line Tools 自带）  
-- Windows 需要 `powershell` 在 `PATH` 中（用于读取 Authenticode 签名）
+- macOS、Windows 或 Linux 系统  
+- macOS 需要 `codesign` 与 `spctl`（Xcode Command Line Tools 自带，用于签名信息查询）  
+- Windows 需要 `powershell` 在 `PATH` 中（用于读取 Authenticode 签名）  
+- Linux 需要标准 XDG / FreeDesktop 桌面环境规范
 
 ### 许可证
 

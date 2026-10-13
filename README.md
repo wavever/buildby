@@ -46,20 +46,28 @@ It also surfaces **CPU architecture** (Apple Silicon `arm64`, Intel `x86_64`, `u
 | :---: | :---: | :---: |
 | ![](/screenshot/img-app-en.png) | ![](/screenshot/img-scan-en.png) | ![](/screenshot/img-filter-en.png) |
 
-## Install
+## Quick Start & Install
+
+### Run instantly with npx (No install needed)
 
 ```bash
-# Install from npm
+npx @wavever/buildby
+```
+
+### Global Installation
+
+```bash
+# Install globally via npm
 npm i -g @wavever/buildby
 
-# Clone and link globally
+# Clone and link globally from source
 git clone https://github.com/wavever/buildby.git
 cd buildby
 npm install
 npm link
 
-# Or run directly
-node bin/buildby.js <command>
+# Or run directly from source
+node bin/buildby.js
 ```
 
 > Previously published as `desktop-app-build-by`. That name is now **deprecated** — please switch to `npm i -g @wavever/buildby`. The CLI command stays `buildby`. See [CHANGELOG.md](./CHANGELOG.md) for details.
@@ -81,23 +89,34 @@ installing over it.
 
 ## Usage
 
-### Interactive search (Default)
+### Interactive TUI Mode (Default)
 
-Running `buildby` with no arguments in a terminal launches the interactive fuzzy search:
+Running `buildby` with no arguments in a terminal launches the interactive app browser:
 
 ```bash
-buildby                  # Launches interactive app search
+buildby                  # Launches interactive app browser
 buildby -i               # Explicit interactive flag
+buildby ui               # Alias
 ```
+
+- **Keyboard Navigation**: Use `↑` / `↓` arrows to navigate through installed apps, `Enter` to select and inspect an app in detail.
+- **Instant Search**: Type any keyword to filter apps in real time.
+- **Scrollable Viewport**: Smoothly scroll through all installed apps with pagination indicators (`▲` / `▼` and `[index/total]`).
+- **Quick Exit**: Press `q` or `Ctrl+C` to quit anytime.
 
 ### Compare two apps (`vs` / `pk`)
 
 Compare the tech stack, binary architecture, size ratio, and code signatures of two apps side by side:
 
 ```bash
+# Compare specific apps directly
 buildby vs "ChatGPT" "Amphetamine"
 buildby pk "WeChat" "Discord"
 buildby compare "Visual Studio Code" "Sublime Text"
+
+# Or enter interactive multi-select comparison mode
+buildby vs
+# → Browse with ↑/↓, press Space to select 2 apps, press Enter to compare!
 ```
 
 ### Inspect a single app
@@ -155,7 +174,26 @@ Batch scans use a local analysis cache. If an app's version and main executable 
 buildby --all --no-cache   # Force a fresh analysis
 ```
 
-### JSON output
+### Export Formats
+
+#### Markdown Table (`--markdown` / `--md`)
+
+Export results as a GitHub Flavored Markdown table, complete with tech stack metadata and an overall distribution summary:
+
+```bash
+buildby --all --md > installed-apps.md
+buildby discord --md
+```
+
+#### CSV Table (`--csv`)
+
+Export results to an RFC 4180 compliant CSV spreadsheet ready for Excel, Numbers, or data analysis:
+
+```bash
+buildby --all --csv > installed-apps.csv
+```
+
+#### JSON Output (`--json`)
 
 Add `--json` to any inspection mode to get machine-readable output on stdout
 (`update` is an action command and has no JSON form). Progress and
@@ -281,20 +319,21 @@ buildby --path "C:\Program Files\SomeApp"
 
 ## Detected Tech Stacks
 
-
 | Stack                        | Description                       | Detection Method                                          |
 | ---------------------------- | --------------------------------- | --------------------------------------------------------- |
-| ⚡ **Electron**               | Node.js + Chromium                | `Electron Framework.framework`, `app.asar`                |
-| 🐦 **Flutter**               | Google's UI toolkit               | `FlutterMacOS.framework`, `flutter_windows.dll`           |
+| ⚡ **Electron**               | Node.js + Chromium                | `Electron Framework.framework`, `app.asar`, framework version extraction |
+| 🐦 **Flutter**               | Google's UI toolkit               | `FlutterMacOS.framework`, `flutter_windows.dll`, framework version |
 | 🌐 **CEF**                   | Chromium Embedded Framework       | `Chromium Embedded Framework.framework`, `libcef.dll`     |
 | 🌐 **Chromium**              | Built directly on Chromium        | `.pak` packs + V8 snapshot (Qt WebEngine excluded)        |
 | 🟩 **NW.js**                 | Node.js + Chromium (node-webkit)  | `nwjs Framework.framework`, `app.nw`                      |
 | ⚛️ **React Native**          | Facebook's React for desktop      | `React.framework`, `hermes.dll`                           |
-| 🦀 **Tauri**                 | Rust + system WebView             | Tauri crate markers in binary, `WebView2Loader.dll`       |
+| 🦀 **Tauri**                 | Rust + system WebView             | Tauri crate markers in binary, v1/v2 variant, `WebView2Loader.dll` |
+| ⚡ **Neutralinojs**          | Lightweight HTML/JS desktop app   | `neutralino.js`, `neutralino.config.json`, binary signatures |
 | 🐹 **Wails**                 | Go + system WebView               | `github.com/wailsapp/wails` in binary                     |
-| 🔷 **Qt**                    | C++ cross-platform                | `Qt*.framework` (incl. nested), `Qt5Core.dll` / `Qt6Core.dll` |
+| 🔷 **Qt**                    | C++ cross-platform                | `Qt*.framework` (incl. nested), `Qt5Core.dll` / `Qt6Core.dll`, Qt version |
 | 🟫 **GTK**                   | GNOME widget toolkit              | `libgtk-3/4.dylib`, `libgtk-3-0.dll`                      |
 | 🧩 **wxWidgets**             | C++ wrapper over native widgets   | `libwx*.dylib`, `wxmswXXu_*.dll`                          |
+| 🧩 **Sciter**                | Embeddable HTML/CSS engine        | `sciter.dll`, `libsciter.dylib`, binary signatures        |
 | 🎵 **JUCE**                  | C++ audio apps and plug-in hosts  | `JUCE v` / `juce::` markers in binary                     |
 | 🐍 **Python**                | py2app / PyInstaller / CPython    | `__boot__.py`, `base_library.zip`, `Python.framework`     |
 | ☕ **JVM**                    | Java/Kotlin/Scala                 | `jbr/`, `libjvm.dylib`, `.jar` in `lib/` `app/` `Java/`   |
@@ -306,36 +345,37 @@ buildby --path "C:\Program Files\SomeApp"
 | 🤖 **Godot**                 | Godot game engine                 | `*.pck` archive + engine marker in binary                 |
 | 🖥️ **Native**               | Platform-native technologies      | Fallback; reports Swift / Objective-C / Rust / Go         |
 
-
 ## Platform Support
-
 
 | Platform | App Discovery                                                    | Detection                                  |
 | -------- | ---------------------------------------------------------------- | ------------------------------------------ |
-| macOS    | `/Applications`, `~/Applications`                                | Framework dirs, `otool -L`, plist metadata |
-| Windows  | `Program Files`, `Program Files (x86)`, `AppData/Local/Programs` | DLL files, directory structure             |
-
+| macOS    | `/Applications`, `~/Applications`                                | Framework bundles, in-process Mach-O parser, `Info.plist` |
+| Windows  | `Program Files`, `Program Files (x86)`, `AppData/Local/Programs` | PE header inspection, DLL signatures, directory structure |
+| Linux    | `/usr/share/applications`, `~/.local/share/applications`, Flatpak, Snap | `.desktop` entries, ELF headers, shared library markers |
 
 ## How It Works
 
-Detection is purely **file-system based** — no admin privileges, no binary disassembly.
+Detection is fast, secure, and purely **file-system and binary header based** — zero admin privileges required.
 
-1. **Framework directory scan** — check `Contents/Frameworks/` for known framework bundles (Electron Framework, FlutterMacOS, Chromium Embedded Framework, Qt*.framework, etc.)
-2. **Resource file patterns** — look for `app.asar`, `flutter_assets`, `app.nw`, etc.
-3. **JVM detection** — detect bundled JRE/JBR runtimes and `.jar` files
-4. **Tauri detection** — use `otool -L` (macOS) to check for system WebKit linkage + `resources/` directory
-5. **Metadata extraction** — parse `Info.plist` for bundle ID, version, and display name
-6. **Signature & notarization** — invoke `codesign -dv` + `spctl --assess` on macOS, or PowerShell `Get-AuthenticodeSignature` on Windows, to surface developer / Team ID / publisher and Apple notarization or Authenticode trust status
-7. **Fallback** — apps with no cross-platform signatures are classified as Native
+1. **Framework directory & DLL scan** — check `Contents/Frameworks/` (macOS), root directories (Windows/Linux), or linked libraries for known frameworks (Electron, Flutter, CEF, Qt, GTK, etc.).
+2. **Binary header inspection** — pure JavaScript streaming parser inspects Mach-O load commands (`LC_LOAD_DYLIB`), Universal/Fat binaries, PE architectures, and ELF headers with zero subprocess overhead.
+3. **Resource file patterns** — look for `app.asar`, `flutter_assets`, `neutralino.js`, `app.nw`, etc.
+4. **Runtime & Framework versions** — extracts runtime versions from Electron (`package.json` / version files), Flutter framework strings, and Qt dylibs.
+5. **JVM & Game Engine detection** — detect bundled JRE/JBR runtimes, `.jar` files, Unity Data, Unreal Engine pak files, and Godot pck archives.
+6. **Metadata extraction** — parse macOS `Info.plist`, Windows version resources, and Linux `.desktop` entries for display name, version, and bundle ID.
+7. **Signature & notarization** — invoke `codesign -dv` + `spctl --assess` on macOS, or PowerShell `Get-AuthenticodeSignature` on Windows, to surface developer, Team ID, publisher, and Apple notarization or Authenticode trust status.
+8. **Smart caching** — hashes binary fingerprints and versions so repeated batch scans run near-instantaneously.
+9. **Native fallback** — apps with no cross-platform framework signatures are classified as Native (Swift / Objective-C / Rust / Go / C++ / Win32).
 
 Detection runs in priority order so the most distinctive signatures are checked first.
 
 ## Requirements
 
 - Node.js >= 18
-- macOS or Windows
-- macOS: `otool`, `codesign`, `spctl` (all bundled with Xcode Command Line Tools)
-- Windows: `powershell` on `PATH` (for Authenticode signature reading)
+- macOS, Windows, or Linux
+- macOS: Xcode Command Line Tools (for `codesign` and `spctl` signature inspection)
+- Windows: PowerShell on `PATH` (for Authenticode signature reading)
+- Linux: Standard FreeDesktop / XDG desktop environment
 
 ## License
 
