@@ -13,6 +13,7 @@
   },
   "files": [
     "assets/",
+    "!assets/*.mp4",
     "bin/",
     "src/",
     "screenshot/",

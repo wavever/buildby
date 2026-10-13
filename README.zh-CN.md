@@ -17,7 +17,9 @@
   <p>
     <a href="./README.md">English</a>
     ·
-    <a href="#安装">安装</a>
+    <a href="#效果演示">演示</a>
+    ·
+    <a href="#快速开始与安装">安装</a>
     ·
     <a href="#用法">用法</a>
     ·
@@ -39,6 +41,15 @@
 - 多种导出格式：终端排版、`--json`、`--markdown` 和 `--csv`。
 - 展示 macOS 与 Windows 应用的签名、公证和信任状态。
 - 跨平台支持：macOS、Windows 与 Linux（.desktop 与 Flatpak/Snap）。
+
+## 效果演示
+
+<div align="center">
+  <a href="./assets/pk-demo.mp4">
+    <img src="./assets/pk-demo.gif" width="760" alt="buildby vs / pk demo">
+  </a>
+  <p><em>交互式双应用 PK 对比模式 (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
+</div>
 
 ## 截图
 

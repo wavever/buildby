@@ -17,7 +17,9 @@
   <p>
     <a href="./README.zh-CN.md">简体中文</a>
     ·
-    <a href="#install">Install</a>
+    <a href="#demo">Demo</a>
+    ·
+    <a href="#quick-start--install">Install</a>
     ·
     <a href="#usage">Usage</a>
     ·
@@ -39,6 +41,15 @@ It also surfaces **CPU architecture** (Apple Silicon `arm64`, Intel `x86_64`, `u
 - Multiple export formats: formatted terminal report, `--json`, `--markdown`, and `--csv`.
 - Signature and notarization metadata for macOS and Windows apps.
 - Cross-platform support for macOS, Windows, and Linux (.desktop entries & Flatpak/Snap).
+
+## Demo
+
+<div align="center">
+  <a href="./assets/pk-demo.mp4">
+    <img src="./assets/pk-demo.gif" width="760" alt="buildby vs / pk demo">
+  </a>
+  <p><em>Interactive App Comparison (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
+</div>
 
 ## Screenshots
 
