@@ -2,10 +2,12 @@ import { detect as detectElectron, meta as electronMeta } from './electron.js';
 import { detect as detectFlutter, meta as flutterMeta } from './flutter.js';
 import { detect as detectCEF, meta as cefMeta } from './cef.js';
 import { detect as detectTauri, meta as tauriMeta } from './tauri.js';
+import { detect as detectNeutralino, meta as neutralinoMeta } from './neutralino.js';
 import { detect as detectWails, meta as wailsMeta } from './wails.js';
 import { detect as detectQt, meta as qtMeta } from './qt.js';
 import { detect as detectGTK, meta as gtkMeta } from './gtk.js';
 import { detect as detectWxWidgets, meta as wxwidgetsMeta } from './wxwidgets.js';
+import { detect as detectSciter, meta as sciterMeta } from './sciter.js';
 import { detect as detectJVM, meta as jvmMeta } from './jvm.js';
 import { detect as detectCompose, meta as composeMeta } from './compose.js';
 import { detect as detectDotNet, meta as dotnetMeta } from './dotnet.js';
@@ -32,8 +34,8 @@ import { detect as detectNative, meta as nativeMeta } from './native.js';
 //     detector folds the toolkit into its name ("Python (PyQt)") so both
 //     layers survive the single-label output.
 //   - Wails precedes Tauri (both are system-WebView shells; the Go module path
-//     is the discriminator).
-//   - JUCE and wxWidgets are late because their macOS checks read binaries.
+//     is the discriminator). Neutralino has explicit config and markers.
+//   - Sciter, JUCE and wxWidgets are late because their macOS checks read binaries / dylibs.
 const DETECTORS = [
   { meta: electronMeta, detect: detectElectron },
   { meta: flutterMeta, detect: detectFlutter },
@@ -52,7 +54,9 @@ const DETECTORS = [
   { meta: qtMeta, detect: detectQt },
   { meta: gtkMeta, detect: detectGTK },
   { meta: wailsMeta, detect: detectWails },
+  { meta: neutralinoMeta, detect: detectNeutralino },
   { meta: tauriMeta, detect: detectTauri },
+  { meta: sciterMeta, detect: detectSciter },
   { meta: juceMeta, detect: detectJUCE },
   { meta: wxwidgetsMeta, detect: detectWxWidgets },
   { meta: nativeMeta, detect: detectNative }, // always last - fallback
@@ -68,6 +72,7 @@ export const ALL_STACK_METAS = [
   qtMeta,
   gtkMeta,
   wxwidgetsMeta,
+  sciterMeta,
   juceMeta,
   unityMeta,
   unrealMeta,
@@ -78,6 +83,7 @@ export const ALL_STACK_METAS = [
   avaloniaMeta,
   pythonMeta,
   wailsMeta,
+  neutralinoMeta,
   tauriMeta,
   nativeMeta,
 ];

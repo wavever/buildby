@@ -11,7 +11,7 @@
     <a href="https://github.com/wavever/buildby/actions/workflows/release.yml"><img alt="Release workflow" src="https://github.com/wavever/buildby/actions/workflows/release.yml/badge.svg"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/wavever/buildby"></a>
     <img alt="Node.js" src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=nodedotjs&amp;logoColor=white">
-    <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-555">
+    <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-555">
   </p>
 
   <p>
@@ -25,17 +25,20 @@
   </p>
 </div>
 
-`buildby` inspects desktop applications on macOS and Windows, then tells you whether each app is built with **native technologies** (Swift, Objective-C, Win32) or a **cross-platform framework** such as Electron, Flutter, Tauri, Qt, JVM, CEF, NW.js, React Native, wxWidgets, Unity, or .NET.
+`buildby` inspects desktop applications on macOS, Windows, and Linux, then tells you whether each app is built with **native technologies** (Swift, Objective-C, Win32) or a **cross-platform framework** such as Electron, Flutter, Tauri, Qt, JVM, CEF, NW.js, React Native, wxWidgets, Unity, .NET, Neutralinojs, or Sciter.
 
-It also surfaces **signature and notarization** details for single-app inspection, including developer name, Team ID, signature status, Apple notarization on macOS, Authenticode status on Windows, and Hardened Runtime status.
+It also surfaces **CPU architecture** (Apple Silicon `arm64`, Intel `x86_64`, `universal`), **framework versions**, and **signature & notarization** details.
 
 ## Highlights
 
-- Fast file-system based detection with no admin privileges required.
+- Fast file-system and binary header detection with zero admin privileges required.
 - Single-app inspection, full installed-app scan, and per-stack filters.
+- Native CPU architecture detection (Apple Silicon arm64, Intel x86_64, Universal binary).
+- Two-app side-by-side comparison (`buildby compare <app1> <app2>`).
+- Interactive fuzzy search mode (`buildby -i`).
+- Multiple export formats: formatted terminal report, `--json`, `--markdown`, and `--csv`.
 - Signature and notarization metadata for macOS and Windows apps.
-- npm package, GitHub Release artifact, and GitHub Packages publishing.
-- Works as a small global CLI: `buildby <app name>`.
+- Cross-platform support for macOS, Windows, and Linux (.desktop entries & Flatpak/Snap).
 
 ## Screenshots
 
@@ -77,6 +80,25 @@ installing over it.
 > longer be inspected by name — use `buildby --path` for that.
 
 ## Usage
+
+### Interactive search (Default)
+
+Running `buildby` with no arguments in a terminal launches the interactive fuzzy search:
+
+```bash
+buildby                  # Launches interactive app search
+buildby -i               # Explicit interactive flag
+```
+
+### Compare two apps (`vs` / `pk`)
+
+Compare the tech stack, binary architecture, size ratio, and code signatures of two apps side by side:
+
+```bash
+buildby vs "ChatGPT" "Amphetamine"
+buildby pk "WeChat" "Discord"
+buildby compare "Visual Studio Code" "Sublime Text"
+```
 
 ### Inspect a single app
 

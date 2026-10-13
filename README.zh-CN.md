@@ -11,7 +11,7 @@
     <a href="https://github.com/wavever/buildby/actions/workflows/release.yml"><img alt="Release workflow" src="https://github.com/wavever/buildby/actions/workflows/release.yml/badge.svg"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/wavever/buildby"></a>
     <img alt="Node.js 18" src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=nodedotjs&amp;logoColor=white">
-    <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-555">
+    <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-555">
   </p>
 
   <p>
@@ -25,17 +25,20 @@
   </p>
 </div>
 
-`buildby` 可以检测 macOS 与 Windows 上桌面应用所使用的技术栈，快速看出一个应用是使用 **原生技术**（Swift、Objective-C、Win32 等），还是使用 **跨平台框架**（Electron、Flutter、Tauri、Qt、JVM、CEF、NW.js、React Native、wxWidgets、Unity、.NET 等）构建的。
+`buildby` 可以检测 macOS、Windows 与 Linux 上桌面应用所使用的技术栈，快速看出一个应用是使用 **原生技术**（Swift、Objective-C、Win32 等），还是使用 **跨平台框架**（Electron、Flutter、Tauri、Qt、JVM、CEF、NW.js、React Native、wxWidgets、Unity、.NET、Neutralinojs、Sciter 等）构建的。
 
-除了识别技术栈，`buildby` 还会在单应用检查时展示 **签名与公证** 信息，包括开发者名称、Team ID、签名状态、Apple 公证状态（macOS）或 Authenticode 状态（Windows），以及是否启用了强化运行时（Hardened Runtime）。
+同时支持展示 **CPU 芯片架构**（Apple Silicon `arm64`、Intel `x86_64`、`universal` 通用二进制）、**框架具体版本**，以及 **签名与公证** 信息。
 
 ## 亮点
 
-- 基于文件系统快速检测，不需要管理员权限。
+- 基于文件系统与二进制头极速检测，纯 JS 内存流式解析，不需要管理员权限。
 - 支持单应用查看、全量扫描、按技术栈过滤。
+- 原生 CPU 芯片架构识别（Apple Silicon arm64 / Intel x86_64 / Universal 二进制）。
+- 双应用横向对比模式（`buildby compare <app1> <app2>`）。
+- 交互式应用模糊搜索模式（`buildby -i`）。
+- 多种导出格式：终端排版、`--json`、`--markdown` 和 `--csv`。
 - 展示 macOS 与 Windows 应用的签名、公证和信任状态。
-- 同时支持 npm 包、GitHub Release 构建包和 GitHub Packages 发布。
-- 安装后直接作为全局 CLI 使用：`buildby <应用名>`。
+- 跨平台支持：macOS、Windows 与 Linux（.desktop 与 Flatpak/Snap）。
 
 ## 截图
 
@@ -73,6 +76,25 @@ buildby update --check   # 仅检查是否有新版本，不安装
 > 由于 `update` 是子命令，名字恰好叫 "update" 的应用无法再按名称检测 —— 这种情况请用 `buildby --path`。
 
 ### 用法
+
+#### 交互式搜索（默认模式）
+
+在交互式终端中直接运行 `buildby` 不传参数，默认启动交互式模糊搜索：
+
+```bash
+buildby                  # 默认进入交互式搜索已安装应用
+buildby -i               # 显式参数
+```
+
+#### 双应用对比（`vs` / `pk`）
+
+并排对比两个应用的技术栈、芯片架构、体积差与代码签名：
+
+```bash
+buildby vs "ChatGPT" "Amphetamine"
+buildby pk "WeChat" "Discord"
+buildby compare "Visual Studio Code" "Sublime Text"
+```
 
 #### 查看单个应用
 

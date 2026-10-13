@@ -41,6 +41,8 @@ const STACK_COLORS = {
   python: chalk.hex('#3776AB'),
   gtk: chalk.hex('#729FCF'),
   wails: chalk.hex('#00ADD8'),
+  neutralino: chalk.cyan,
+  sciter: chalk.green,
   compose: chalk.hex('#7F52FF'),
   avalonia: chalk.hex('#8B44AC'),
   juce: chalk.hex('#8DC63F'),
@@ -67,6 +69,8 @@ const STACK_ICONS = {
   python: '🐍',
   gtk: '🟫',
   wails: '🐹',
+  neutralino: '🚀',
+  sciter: '📜',
   compose: '🟣',
   avalonia: '🦅',
   juce: '🎵',
@@ -189,10 +193,21 @@ export function printAppDetail(result) {
   if (result.metadata?.version) {
     console.log(`  ${chalk.bold(t('label_version'))} ${chalk.dim(result.metadata.version)}`);
   }
+  if (result.frameworkVersion) {
+    console.log(`  ${chalk.bold(t('label_framework_version'))} ${chalk.cyan(result.frameworkVersion)}`);
+  }
+  if (result.architecture && result.architecture !== 'unknown') {
+    const archLabel = result.architecture === 'universal'
+      ? 'Universal (Apple Silicon · Intel)'
+      : (result.architecture === 'arm64' && result.platform === 'darwin'
+        ? 'Apple Silicon (arm64)'
+        : result.architecture);
+    console.log(`  ${chalk.bold(t('label_architecture'))} ${chalk.green(archLabel)}`);
+  }
   if (result.sizeBytes > 0) {
     console.log(`  ${chalk.bold(t('label_size'))} ${chalk.dim(formatSize(result.sizeBytes))}`);
   }
-  if (result.metadata?.bundleId || result.metadata?.version || result.sizeBytes > 0) {
+  if (result.metadata?.bundleId || result.metadata?.version || result.frameworkVersion || (result.architecture && result.architecture !== 'unknown') || result.sizeBytes > 0) {
     console.log();
   }
 

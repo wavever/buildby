@@ -28,6 +28,7 @@ parentPort.on('message', ({
         stack: 'unknown',
         stackName: 'Unknown',
         variant: null,
+        frameworkVersion: null,
         category: 'unknown',
         confidence: 'low',
         evidence: ['Analysis failed'],

@@ -29,6 +29,9 @@ import {
   runGlobalInstall,
   PACKAGE_NAME,
 } from './update.js';
+import { formatMarkdown, formatCsv } from './formatters.js';
+import { printAppComparison, buildCompareJson } from './compare.js';
+import { runInteractiveSelect } from './interactive.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json');
@@ -64,7 +67,11 @@ export function run() {
     .addOption(new Option('--scan', t('cmd_scan_legacy')).hideHelp())
     .option('--path <dir>', t('cmd_path'))
     .option('--no-cache', t('cmd_no_cache'))
-    .option('--json', t('cmd_json'));
+    .option('--json', t('cmd_json'))
+    .option('--markdown', t('cmd_markdown'))
+    .option('--md', t('cmd_markdown'))
+    .option('--csv', t('cmd_csv'))
+    .option('-i, --interactive', t('cmd_interactive'));
 
   // ─── buildby --<stack> filter flags ───────────────────────────────────────
   for (const meta of ALL_STACK_METAS) {
@@ -72,6 +79,34 @@ export function run() {
     const flags = shortFlag ? `-${shortFlag}, --${meta.id}` : `--${meta.id}`;
     program.option(flags, t('cmd_filter', { name: meta.name }));
   }
+
+  // ─── buildby compare [app1] [app2] ──────────────────────────────────────────
+  program
+    .command('compare [app1] [app2]')
+    .aliases(['vs', 'pk'])
+    .description(t('cmd_compare'))
+    .option('--json', t('cmd_json'))
+    .action(async (app1, app2, opts, cmd) => {
+      const mergedOpts = {
+        ...program.opts(),
+        ...(cmd ? cmd.optsWithGlobals() : {}),
+        ...opts,
+      };
+      await handleCompare(app1, app2, mergedOpts);
+    });
+
+  // ─── buildby interactive ────────────────────────────────────────────────────
+  program
+    .command('interactive')
+    .description(t('cmd_interactive'))
+    .action(async (opts, cmd) => {
+      const mergedOpts = {
+        ...program.opts(),
+        ...(cmd ? cmd.optsWithGlobals() : {}),
+        ...opts,
+      };
+      await handleInteractive(mergedOpts);
+    });
 
   // ─── buildby update ───────────────────────────────────────────────────────
   // Registered as a subcommand, so it takes precedence over the [appname]
@@ -95,15 +130,23 @@ export function run() {
       ...opts,
       cache: config.cache && opts.cache !== false,
       json: !!opts.json,
+      markdown: !!(opts.markdown || opts.md),
+      csv: !!opts.csv,
     };
 
-    if (platform !== 'darwin' && platform !== 'win32') {
+    if (platform !== 'darwin' && platform !== 'win32' && platform !== 'linux') {
       if (runtimeOpts.json) {
         printJson(buildErrorPayload('unsupported_platform', `Unsupported platform: ${platform}`));
         process.exit(EXIT_ERROR);
       }
       printError(t('err_unsupported_platform', { platform }));
       process.exit(1);
+    }
+
+    // ── Interactive mode flag ────────────────────────────────────────────────
+    if (opts.interactive) {
+      await handleInteractive(runtimeOpts);
+      return;
     }
 
     // ── Custom path override ─────────────────────────────────────────────────
@@ -132,7 +175,13 @@ export function run() {
       return;
     }
 
-    // No args: show help
+    // No args: default to interactive TUI mode if running in an interactive terminal
+    if (process.stdin.isTTY) {
+      await handleInteractive(runtimeOpts);
+      return;
+    }
+
+    // Non-interactive fallback: show help
     program.help();
   });
 
@@ -192,6 +241,16 @@ async function handleSingleApp(query, opts = {}) {
     return;
   }
 
+  if (opts.markdown) {
+    process.stdout.write(formatMarkdown(results, { query }));
+    return;
+  }
+
+  if (opts.csv) {
+    process.stdout.write(formatCsv(results));
+    return;
+  }
+
   for (const result of results) {
     printAppDetail(result);
   }
@@ -235,6 +294,16 @@ async function handleSinglePath(dirPath, platform, opts = {}) {
     return;
   }
 
+  if (opts.markdown) {
+    process.stdout.write(formatMarkdown([result], { query: dirPath }));
+    return;
+  }
+
+  if (opts.csv) {
+    process.stdout.write(formatCsv([result]));
+    return;
+  }
+
   printAppDetail(result);
 }
 
@@ -261,7 +330,7 @@ async function handleScan(opts = {}) {
   }, {
     // JSON consumers get the full native breakdown: `variant` should not
     // silently depend on which output mode was requested.
-    includeNativeDetails: json,
+    includeNativeDetails: json || opts.markdown || opts.csv,
     useCache: opts.cache,
   });
 
@@ -269,6 +338,16 @@ async function handleScan(opts = {}) {
 
   if (json) {
     printJson(buildPayload({ mode: 'scan', results, includeSummary: true }));
+    return;
+  }
+
+  if (opts.markdown) {
+    process.stdout.write(formatMarkdown(results, { summary: true }));
+    return;
+  }
+
+  if (opts.csv) {
+    process.stdout.write(formatCsv(results));
     return;
   }
 
@@ -296,7 +375,7 @@ async function handleFilterByStack(stackId, opts = {}) {
   const results = await analyzeApps(apps, (current, total) => {
     spinner.text = t('spinner_analyzing_progress', { current, total });
   }, {
-    includeNativeDetails: json || stackId === 'native',
+    includeNativeDetails: json || opts.markdown || opts.csv || stackId === 'native',
     useCache: opts.cache,
   });
 
@@ -306,6 +385,18 @@ async function handleFilterByStack(stackId, opts = {}) {
 
   if (json) {
     printJson(buildPayload({ mode: 'filter', value: stackId, results: filtered }));
+    if (filtered.length === 0) process.exit(EXIT_NO_RESULTS);
+    return;
+  }
+
+  if (opts.markdown) {
+    process.stdout.write(formatMarkdown(filtered, { query: stackId, summary: true }));
+    if (filtered.length === 0) process.exit(EXIT_NO_RESULTS);
+    return;
+  }
+
+  if (opts.csv) {
+    process.stdout.write(formatCsv(filtered));
     if (filtered.length === 0) process.exit(EXIT_NO_RESULTS);
     return;
   }
@@ -351,3 +442,94 @@ async function handleUpdate({ check = false } = {}) {
 
   printSuccess(t('update_success', { version: latest }));
 }
+
+async function executeCompare(appA, appB, opts = {}) {
+  const { json = false } = opts;
+  const spinner = createSpinner(t('spinner_analyzing', { name: `${appA.name} & ${appB.name}` }));
+  const results = await analyzeAppsDetailed([appA, appB]);
+
+  if (results.length < 2) {
+    spinner.fail(t('spinner_path_fail', { msg: `${appA.name} vs ${appB.name}` }));
+    if (json) {
+      printJson(buildErrorPayload('compare_analysis_failed', 'Failed to analyze both applications for comparison'));
+      process.exit(EXIT_ERROR);
+    }
+    return;
+  }
+
+  spinner.succeed(t('spinner_analyzed', { name: `${results[0].name} vs ${results[1].name}` }));
+
+  if (json) {
+    printJson(buildCompareJson(results[0], results[1]));
+    return;
+  }
+
+  printAppComparison(results[0], results[1]);
+}
+
+async function handleCompare(app1Query, app2Query, opts = {}) {
+  const { json = false } = opts;
+
+  // Launch interactive multi-select if arguments are missing and running in TTY
+  if ((!app1Query || !app2Query) && process.stdin.isTTY && !json) {
+    const { runInteractiveCompare } = await import('./interactive.js');
+    await runInteractiveCompare(null, async (selectedApps) => {
+      if (selectedApps && selectedApps.length === 2) {
+        await executeCompare(selectedApps[0], selectedApps[1], opts);
+      }
+    }, { preselected: app1Query ? [app1Query] : [] });
+    return;
+  }
+
+  if (!app1Query || !app2Query) {
+    printError('Please specify two applications to compare (e.g. `buildby vs app1 app2`) or run in an interactive terminal.');
+    return;
+  }
+
+  const spinner = createSpinner(t('spinner_searching', { query: `${app1Query} vs ${app2Query}` }));
+
+  const resolveApp = async (query) => {
+    const { default: fs } = await import('fs');
+    if (fs.existsSync(query)) {
+      const name = process.platform === 'darwin'
+        ? (await import('path')).default.basename(query, '.app')
+        : (await import('path')).default.basename(query);
+      return { name, path: query, platform: process.platform };
+    }
+    const matches = findAppsByName(query);
+    return matches.length > 0 ? matches[0] : null;
+  };
+
+  const appA = await resolveApp(app1Query);
+  const appB = await resolveApp(app2Query);
+
+  if (!appA || !appB) {
+    const missing = !appA && !appB
+      ? `"${app1Query}" and "${app2Query}"`
+      : (!appA ? `"${app1Query}"` : `"${app2Query}"`);
+    spinner.fail(t('spinner_no_match', { query: missing }));
+    if (json) {
+      printJson(buildErrorPayload('compare_app_not_found', `Could not find application(s): ${missing}`));
+      process.exit(EXIT_NO_RESULTS);
+    }
+    printWarning(t('warn_use_scan'));
+    return;
+  }
+
+  await executeCompare(appA, appB, opts);
+}
+
+async function handleInteractive(opts = {}) {
+  const spinner = createSpinner(t('spinner_scanning'));
+  const apps = scanAllApps();
+  if (apps.length === 0) {
+    spinner.fail(t('spinner_no_apps'));
+    return;
+  }
+  spinner.succeed(t('spinner_analyzed_n', { count: apps.length }));
+
+  await runInteractiveSelect(apps, async (selected) => {
+    await handleSinglePath(selected.path, selected.platform || process.platform, opts);
+  });
+}
+

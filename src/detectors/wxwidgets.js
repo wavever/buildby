@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execCached } from '../commandCache.js';
+import { getMachOLinkedLibraries } from '../binary.js';
 
 export const meta = {
   id: 'wxwidgets',
@@ -73,20 +74,35 @@ export function detect(appPath, platform) {
         const stat = fs.statSync(binPath);
         if (!stat.isFile()) continue;
 
-        // 尽量避免对所有二进制都跑 otool -L，这里只对主可执行文件跑一遍
+        // 尽量避免对所有二进制都跑检查，这里只对主可执行文件跑一遍
         if (bin !== path.basename(appPath, '.app')) continue;
 
+        let found = false;
         try {
-          const output = execCached('otool', ['-L', binPath], {
-            timeout: 3000,
-            maxBuffer: 256 * 1024,
-          });
-
-          if (output.match(/libwx.*\.dylib/)) {
-            evidence.push('Links wxWidgets dynamic library (libwx*.dylib)');
+          const libs = getMachOLinkedLibraries(binPath);
+          if (libs && libs.length > 0) {
+            if (libs.some((l) => /libwx.*\.dylib/i.test(l) || /wx.*\.dylib/i.test(l) || l.includes('wxWidgets'))) {
+              evidence.push('Links wxWidgets dynamic library (libwx*.dylib)');
+              found = true;
+            }
           }
         } catch {
-          // ignore otool errors
+          // ignore
+        }
+
+        if (!found) {
+          try {
+            const output = execCached('otool', ['-L', binPath], {
+              timeout: 3000,
+              maxBuffer: 256 * 1024,
+            });
+
+            if (output.match(/libwx.*\.dylib/)) {
+              evidence.push('Links wxWidgets dynamic library (libwx*.dylib)');
+            }
+          } catch {
+            // ignore otool errors
+          }
         }
         break;
       }

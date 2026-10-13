@@ -2,6 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { loadConfig } from './config.js';
+import {
+  getLinuxAppDirectories,
+  scanLinuxApps,
+  findLinuxAppsByName as findLinuxAppsByNameDirect,
+} from './linuxScanner.js';
 
 /**
  * Get all application directories for the current platform.
@@ -28,6 +33,10 @@ export function getAppDirectories() {
     ].filter(Boolean).filter((p) => fs.existsSync(p));
 
     return { platform, paths: programFiles };
+  }
+
+  if (platform === 'linux') {
+    return { platform, paths: getLinuxAppDirectories() };
   }
 
   return { platform, paths: [] };
@@ -111,6 +120,10 @@ function isExcludedApp(app, excludeApps, bundleId = '') {
  */
 export function scanAllApps({ applyExclusions = true } = {}) {
   const { paths, platform } = getAppDirectories();
+  if (platform === 'linux') {
+    return scanLinuxApps({ applyExclusions });
+  }
+
   const { excludeApps } = applyExclusions ? loadConfig() : { excludeApps: [] };
   const apps = [];
   const seen = new Set();
@@ -185,3 +198,9 @@ function levenshtein(a, b) {
   }
   return matrix[b.length][a.length];
 }
+
+export {
+  getLinuxAppDirectories,
+  scanLinuxApps,
+  findLinuxAppsByNameDirect as findLinuxAppsByName,
+};

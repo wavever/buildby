@@ -10,15 +10,65 @@ export const meta = {
   website: 'https://www.electronjs.org',
 };
 
+function readPlistVersion(plistPath) {
+  try {
+    if (!fs.existsSync(plistPath)) return null;
+    const content = fs.readFileSync(plistPath, 'utf8');
+    const shortVer = content.match(/<key>CFBundleShortVersionString<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
+    if (shortVer) return shortVer.trim().replace(/^v/, '');
+    const bundleVer = content.match(/<key>CFBundleVersion<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
+    if (bundleVer) return bundleVer.trim().replace(/^v/, '');
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function readVersionFile(verPath) {
+  try {
+    if (!fs.existsSync(verPath)) return null;
+    const content = fs.readFileSync(verPath, 'utf8').trim();
+    const match = content.match(/^v?(\d+\.\d+[\w.-]*)/);
+    if (match) return match[1];
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function detect(appPath, platform) {
   const evidence = [];
+  let frameworkVersion = null;
 
   if (platform === 'darwin') {
     const frameworksDir = path.join(appPath, 'Contents', 'Frameworks');
     const resourcesDir = path.join(appPath, 'Contents', 'Resources');
+    const electronFramework = path.join(frameworksDir, 'Electron Framework.framework');
 
-    if (fs.existsSync(path.join(frameworksDir, 'Electron Framework.framework'))) {
+    if (fs.existsSync(electronFramework)) {
       evidence.push('Electron Framework.framework');
+
+      // Try reading framework version
+      const plistCandidates = [
+        path.join(electronFramework, 'Resources', 'Info.plist'),
+        path.join(electronFramework, 'Versions', 'Current', 'Resources', 'Info.plist'),
+        path.join(electronFramework, 'Info.plist'),
+      ];
+      for (const p of plistCandidates) {
+        frameworkVersion = readPlistVersion(p);
+        if (frameworkVersion) break;
+      }
+
+      if (!frameworkVersion) {
+        const verFileCandidates = [
+          path.join(electronFramework, 'Resources', 'version'),
+          path.join(electronFramework, 'version'),
+        ];
+        for (const p of verFileCandidates) {
+          frameworkVersion = readVersionFile(p);
+          if (frameworkVersion) break;
+        }
+      }
     }
     if (fs.existsSync(path.join(resourcesDir, 'app.asar'))) {
       evidence.push('app.asar');
@@ -70,12 +120,22 @@ export function detect(appPath, platform) {
     } catch {
       // ignore
     }
+
+    // Try reading version file on Windows
+    frameworkVersion =
+      readVersionFile(path.join(appPath, 'version')) ||
+      readVersionFile(path.join(appPath, 'resources', 'version'));
   }
 
   if (evidence.length === 0) return null;
 
+  if (frameworkVersion) {
+    evidence.push(`Electron version: ${frameworkVersion}`);
+  }
+
   return {
     ...meta,
+    frameworkVersion: frameworkVersion || null,
     confidence: evidence.length >= 2 ? 'high' : 'medium',
     evidence,
   };

@@ -2,8 +2,30 @@ import fs from 'fs';
 import path from 'path';
 import { execCached } from '../commandCache.js';
 import { binaryContainsAny, resolveWindowsExecutable } from './shared.js';
+import { getMachOLinkedLibraries } from '../binary.js';
 
 const TAURI_MARKERS = ['tauri-runtime-wry', 'tauri::', '/tauri-'];
+
+const TAURI_V2_MARKERS = [
+  'tauri-runtime-wry/2',
+  'tauri-runtime/2',
+  'tauri-build/2',
+  'tauri-2.',
+  '/tauri-2.',
+  'tauri@2',
+  'tauri-plugin-',
+  'plugin:tauri',
+  'plugins.tauri.app',
+];
+
+const TAURI_V1_MARKERS = [
+  'tauri-runtime-wry/1',
+  'tauri-runtime/1',
+  'tauri-build/1',
+  'tauri-1.',
+  '/tauri-1.',
+  'tauri@1',
+];
 
 export const meta = {
   id: 'tauri',
@@ -15,10 +37,19 @@ export const meta = {
 };
 
 /**
- * Use `otool -L` (macOS only) to check if a binary links against WebKit.
- * This is very fast (~20ms) and reliable for detecting Tauri apps.
+ * Check if a binary links against WebKit.
+ * Prefers pure-JS Mach-O parsing, falling back to `otool -L`.
  */
 function linksWebKit(binaryPath) {
+  try {
+    const libs = getMachOLinkedLibraries(binaryPath);
+    if (libs && libs.length > 0) {
+      return libs.some((lib) => lib.includes('WebKit.framework'));
+    }
+  } catch {
+    // fallback
+  }
+
   const output = execCached('otool', ['-L', binaryPath], {
     timeout: 3000,
     maxBuffer: 256 * 1024,
@@ -28,19 +59,15 @@ function linksWebKit(binaryPath) {
 
 /**
  * Check if a binary contains Tauri-specific strings (crate paths, symbols).
- * Tauri v2 embeds web assets directly into the binary via include_dir!,
- * so we can't rely on external index.html alone.
+ * Streams the file via binaryContainsAny without spawning `strings`.
  */
 function containsTauriSignature(binaryPath) {
-  const output = execCached('strings', ['-n', '12', binaryPath], {
-    timeout: 5000,
-    maxBuffer: 2 * 1024 * 1024,
-  });
-  return TAURI_MARKERS.some((m) => output.includes(m));
+  return binaryContainsAny(binaryPath, TAURI_MARKERS, { maxBytes: 160 * 1024 * 1024 }) !== null;
 }
 
 export function detect(appPath, platform) {
   const evidence = [];
+  let detectedVariant = null;
 
   if (platform === 'darwin') {
     const frameworksDir = path.join(appPath, 'Contents', 'Frameworks');
@@ -65,10 +92,9 @@ export function detect(appPath, platform) {
     if (hasHeavyFramework) return null;
 
     // Check Resources for bundled web assets (Tauri front-end)
-    // We intentionally only do a shallow scan for performance.
+    let hasIndexHtml = false;
     try {
       const resourcesItems = fs.readdirSync(resourcesDir);
-      let hasIndexHtml = false;
 
       for (const item of resourcesItems) {
         const p = path.join(resourcesDir, item);
@@ -80,7 +106,6 @@ export function detect(appPath, platform) {
         }
 
         if (stat.isDirectory()) {
-          // One-level-deep scan for index.html in typical dist/build folders
           try {
             const subItems = fs.readdirSync(p);
             if (subItems.some((f) => f === 'index.html' || f === 'index.htm')) {
@@ -100,8 +125,6 @@ export function detect(appPath, platform) {
       // No Resources directory or unreadable – ignore
     }
 
-    // Use otool -L to check if main binary links against system WebKit
-    // Tauri apps use WKWebView (system WebKit), unlike Electron which bundles Chromium
     try {
       const binaries = fs.readdirSync(macosDir);
       for (const bin of binaries) {
@@ -114,16 +137,20 @@ export function detect(appPath, platform) {
           evidence.push('Links system WebKit.framework (WKWebView)');
         }
 
-        // Tauri v2 embeds web assets into the binary — no external index.html.
-        // Fall back to scanning for Tauri crate strings inside the binary.
         const shouldScanBinary =
-          hasWebKitLink &&
+          (hasWebKitLink || hasIndexHtml) &&
           !hasHeavyFramework &&
-          // `strings` on huge app binaries is expensive. Most Tauri bundles are
-          // compact single binaries, so keep this fallback focused.
           stat.size <= 160 * 1024 * 1024;
+
         if (shouldScanBinary && containsTauriSignature(binPath)) {
           evidence.push('Tauri framework signature in binary');
+
+          // Check for v1 vs v2 indicators
+          if (binaryContainsAny(binPath, TAURI_V2_MARKERS, { maxBytes: 160 * 1024 * 1024 })) {
+            detectedVariant = 'v2';
+          } else if (binaryContainsAny(binPath, TAURI_V1_MARKERS, { maxBytes: 160 * 1024 * 1024 })) {
+            detectedVariant = 'v1';
+          }
         }
 
         if (evidence.length > 0) break;
@@ -131,18 +158,24 @@ export function detect(appPath, platform) {
     } catch {
       // ignore
     }
+
+    if (!detectedVariant) {
+      if (hasIndexHtml) {
+        detectedVariant = 'v1';
+      } else if (evidence.some((e) => e.includes('Tauri framework signature'))) {
+        detectedVariant = 'v2';
+      }
+    }
   } else if (platform === 'win32') {
     // Tauri on Windows uses WebView2
     if (fs.existsSync(path.join(appPath, 'WebView2Loader.dll'))) {
       evidence.push('WebView2Loader.dll');
     }
 
-    // Check for Tauri updater or config
     try {
       const files = fs.readdirSync(appPath);
       const hasWebView2 = evidence.length > 0;
 
-      // Tauri apps typically have a single .exe with WebView2Loader.dll
       const exeFiles = files.filter((f) => f.endsWith('.exe'));
       if (hasWebView2 && exeFiles.length === 1) {
         evidence.push(`Single executable: ${exeFiles[0]}`);
@@ -151,12 +184,15 @@ export function detect(appPath, platform) {
       // ignore
     }
 
-    // WebView2 alone means nothing (any WebView2 host ships it), so the
-    // verdict below requires the Tauri crate signature. Probe the exe for it —
-    // without this, Windows could never satisfy that requirement.
     const exePath = resolveWindowsExecutable(appPath);
     if (exePath && binaryContainsAny(exePath, TAURI_MARKERS)) {
       evidence.push('Tauri framework signature in binary');
+
+      if (binaryContainsAny(exePath, TAURI_V2_MARKERS)) {
+        detectedVariant = 'v2';
+      } else if (binaryContainsAny(exePath, TAURI_V1_MARKERS)) {
+        detectedVariant = 'v1';
+      }
     }
   }
 
@@ -167,10 +203,6 @@ export function detect(appPath, platform) {
   const hasTauriSig = evidence.some((e) => e.includes('Tauri framework signature'));
   const hasWebView2 = evidence.includes('WebView2Loader.dll');
 
-  // Tauri signature in binary is the strongest signal.
-  // WebKit + index.html alone is NOT sufficient (many native apps use WKWebView + bundled HTML).
-  // macOS: require Tauri signature, optionally reinforced by WebKit/index.html
-  // Windows: require WebView2 + Tauri signature (WebView2 alone could be any WebView2 app)
   if (!hasTauriSig && !hasWebView2) return null;
   if (hasWebView2 && !hasTauriSig) return null;
 
@@ -180,6 +212,7 @@ export function detect(appPath, platform) {
 
   return {
     ...meta,
+    variant: detectedVariant,
     confidence,
     evidence,
   };

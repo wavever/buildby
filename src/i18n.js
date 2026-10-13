@@ -55,6 +55,8 @@ const translations = {
     label_evidence: 'Evidence:',
     label_bundle_id: 'Bundle ID:',
     label_version: 'Version:',
+    label_framework_version: 'Framework Version:',
+    label_architecture: 'Architecture:',
     label_size: 'Size:',
     table_head_size: 'Size',
 
@@ -125,8 +127,8 @@ const translations = {
 
     // ── warnings / errors ────────────────────────────────────────────────────
     warn_use_scan: 'Try using --all to see all installed apps.',
-    warn_platform: 'Make sure you are running on macOS or Windows.',
-    err_unsupported_platform: 'Unsupported platform: {platform}. Only macOS and Windows are supported.',
+    warn_platform: 'Make sure you are running on macOS, Windows, or Linux.',
+    err_unsupported_platform: 'Unsupported platform: {platform}. Only macOS, Windows, and Linux are supported.',
     err_path_not_found: 'Path not found: {path}',
 
     // ── commander descriptions ────────────────────────────────────────────────
@@ -137,6 +139,11 @@ const translations = {
     cmd_path: 'Specify a custom directory to scan',
     cmd_no_cache: 'Disable the local analysis cache',
     cmd_json: 'Output machine-readable JSON instead of a report',
+    cmd_markdown: 'Output report in GitHub Flavored Markdown',
+    cmd_csv: 'Output results in CSV format (RFC 4180)',
+    cmd_interactive: 'Interactive application search and selection',
+    cmd_compare: 'Compare technology stack and properties of two applications',
+    compare_title: 'Application Comparison',
     cmd_update: 'Update buildby to the latest published version',
     cmd_update_check: 'Only report whether an update exists, without installing',
 
@@ -168,6 +175,8 @@ const translations = {
     stack_desc_python: 'Python apps bundled with py2app, PyInstaller, Nuitka or a vendored CPython',
     stack_desc_gtk: 'GNOME cross-platform widget toolkit (GIMP, Inkscape, Pidgin, etc.)',
     stack_desc_wails: 'Go backend with the system WebView (WKWebView / WebView2)',
+    stack_desc_neutralino: 'Lightweight portable desktop framework using native browser engines',
+    stack_desc_sciter: 'Embeddable HTML/CSS/JavaScript UI engine for desktop applications',
     stack_desc_compose: "JetBrains' Kotlin UI framework rendering through Skia (skiko)",
     stack_desc_avalonia: 'Cross-platform .NET UI framework with its own Skia-based renderer',
     stack_desc_juce: 'C++ framework for audio applications and plug-in hosts',
@@ -185,6 +194,8 @@ const translations = {
     label_evidence: '检测依据：',
     label_bundle_id: 'Bundle ID：',
     label_version: '版本：',
+    label_framework_version: '框架版本：',
+    label_architecture: 'CPU 架构：',
     label_size: '大小：',
     table_head_size: '大小',
 
@@ -255,8 +266,8 @@ const translations = {
 
     // ── warnings / errors ────────────────────────────────────────────────────
     warn_use_scan: '可使用 --all 查看所有已安装的应用。',
-    warn_platform: '请确认当前系统为 macOS 或 Windows。',
-    err_unsupported_platform: '不支持的平台：{platform}，仅支持 macOS 和 Windows。',
+    warn_platform: '请确认当前系统为 macOS、Windows 或 Linux。',
+    err_unsupported_platform: '不支持的平台：{platform}，仅支持 macOS、Windows 与 Linux。',
     err_path_not_found: '路径不存在：{path}',
 
     // ── commander descriptions ────────────────────────────────────────────────
@@ -267,6 +278,11 @@ const translations = {
     cmd_path: '指定要扫描的目录路径',
     cmd_no_cache: '禁用本地分析缓存',
     cmd_json: '输出机器可读的 JSON，而非终端报告',
+    cmd_markdown: '以 GitHub Flavored Markdown 格式导出报告',
+    cmd_csv: '以 CSV 格式导出结果 (符合 RFC 4180)',
+    cmd_interactive: '交互式搜索与选择检测应用',
+    cmd_compare: '对比两个桌面应用的技术栈与各项属性',
+    compare_title: '应用对比分析',
     cmd_update: '将 buildby 升级到最新发布版本',
     cmd_update_check: '仅检查是否有新版本，不执行安装',
 
@@ -298,6 +314,8 @@ const translations = {
     stack_desc_python: '由 py2app、PyInstaller、Nuitka 打包或内置 CPython 的 Python 应用',
     stack_desc_gtk: 'GNOME 跨平台控件工具包（GIMP、Inkscape、Pidgin 等）',
     stack_desc_wails: 'Go 后端 + 系统 WebView（WKWebView / WebView2）',
+    stack_desc_neutralino: '基于原生浏览器引擎的轻量级便携跨平台桌面框架',
+    stack_desc_sciter: '适用于桌面应用的可嵌入 HTML/CSS/JavaScript UI 引擎',
     stack_desc_compose: 'JetBrains 的 Kotlin UI 框架，通过 Skia（skiko）渲染',
     stack_desc_avalonia: '自带 Skia 渲染器的跨平台 .NET UI 框架',
     stack_desc_juce: '面向音频应用与插件宿主的 C++ 框架',

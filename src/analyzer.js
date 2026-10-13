@@ -4,6 +4,7 @@ import os from 'os';
 import { execFile, execFileSync, spawnSync } from 'child_process';
 import { Worker } from 'worker_threads';
 import { detectStack } from './detectors/index.js';
+import { getBinaryArchitecture } from './binary.js';
 import { LOCALE } from './i18n.js';
 
 // Entries are keyed on app version + executable fingerprint, neither of which
@@ -521,6 +522,20 @@ export function analyzeApp(app, {
     : null;
   const sizeBytes = typeof knownSizeBytes === 'number' ? knownSizeBytes : getAppSize(appPath);
 
+  let execPath = null;
+  if (platform === 'darwin') {
+    execPath = findPrimaryMacExecutable(appPath, metadata);
+  } else if (platform === 'win32') {
+    execPath = findPrimaryExe(appPath);
+  } else if (platform === 'linux') {
+    try {
+      if (fs.existsSync(appPath) && fs.statSync(appPath).isFile()) {
+        execPath = appPath;
+      }
+    } catch { /* ignore */ }
+  }
+  const architecture = execPath ? getBinaryArchitecture(execPath, platform) : 'unknown';
+
   let signature = null;
   let notarization = null;
   if (includeSignature) {
@@ -540,6 +555,8 @@ export function analyzeApp(app, {
     stack: detection.id,
     stackName: detection.name,
     variant: detection.variant ?? null,
+    frameworkVersion: detection.frameworkVersion ?? null,
+    architecture,
     category: detection.category,
     confidence: detection.confidence,
     evidence: detection.evidence,
@@ -561,6 +578,8 @@ function createFailedResult(app) {
     stack: 'unknown',
     stackName: 'Unknown',
     variant: null,
+    frameworkVersion: null,
+    architecture: 'unknown',
     category: 'unknown',
     confidence: 'low',
     evidence: ['Analysis failed'],

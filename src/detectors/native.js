@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { execCached } from '../commandCache.js';
 import { binaryContainsAny } from './shared.js';
+import { getMachOLinkedLibraries } from '../binary.js';
 
 export const meta = {
   id: 'native',
@@ -99,7 +100,7 @@ function detectMacOSDetails(appPath) {
     evidence.push('macOS native binary');
   }
 
-  // ── Phase 2: otool -L on main executable (precise framework detection) ────
+  // ── Phase 2: linked libraries on main executable (precise framework detection)
   let hasSwiftUI = hasSwiftUILib;
   let hasAppKit = false;
   let hasUIKit = false;
@@ -107,14 +108,28 @@ function detectMacOSDetails(appPath) {
 
   const execPath = resolveExecutable(appPath);
   if (execPath) {
-    const otool = getLinkedLibraries(execPath);
-    if (otool) {
-      hasSwiftUI = hasSwiftUI || otool.includes('SwiftUI.framework');
-      hasAppKit = otool.includes('AppKit.framework');
-      hasUIKit = otool.includes('UIKit.framework');
-      hasSwiftSystem =
-        otool.includes('libswiftCore') ||
-        otool.includes('/usr/lib/swift/');
+    let libs = [];
+    try {
+      libs = getMachOLinkedLibraries(execPath);
+    } catch {
+      // ignore
+    }
+
+    if (libs && libs.length > 0) {
+      hasSwiftUI = hasSwiftUI || libs.some((l) => l.includes('SwiftUI.framework'));
+      hasAppKit = libs.some((l) => l.includes('AppKit.framework'));
+      hasUIKit = libs.some((l) => l.includes('UIKit.framework'));
+      hasSwiftSystem = libs.some((l) => l.includes('libswiftCore') || l.includes('/usr/lib/swift/'));
+    } else {
+      const otool = getLinkedLibraries(execPath);
+      if (otool) {
+        hasSwiftUI = hasSwiftUI || otool.includes('SwiftUI.framework');
+        hasAppKit = otool.includes('AppKit.framework');
+        hasUIKit = otool.includes('UIKit.framework');
+        hasSwiftSystem =
+          otool.includes('libswiftCore') ||
+          otool.includes('/usr/lib/swift/');
+      }
     }
   }
 

@@ -11,27 +11,42 @@ export const meta = {
   website: 'https://www.qt.io',
 };
 
+function readQtPlistVersion(frameworkPath) {
+  const plistCandidates = [
+    path.join(frameworkPath, 'Resources', 'Info.plist'),
+    path.join(frameworkPath, 'Versions', 'Current', 'Resources', 'Info.plist'),
+    path.join(frameworkPath, 'Versions', '5', 'Resources', 'Info.plist'),
+    path.join(frameworkPath, 'Versions', '6', 'Resources', 'Info.plist'),
+    path.join(frameworkPath, 'Versions', 'A', 'Resources', 'Info.plist'),
+    path.join(frameworkPath, 'Info.plist'),
+  ];
+
+  for (const plistPath of plistCandidates) {
+    try {
+      if (!fs.existsSync(plistPath)) continue;
+      const content = fs.readFileSync(plistPath, 'utf8');
+      const shortVer = content.match(/<key>CFBundleShortVersionString<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
+      if (shortVer) return shortVer.trim();
+      const bundleVer = content.match(/<key>CFBundleVersion<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
+      if (bundleVer) return bundleVer.trim();
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
 export function detect(appPath, platform) {
   const evidence = [];
+  let frameworkVersion = null;
 
   if (platform === 'darwin') {
     const frameworksDir = path.join(appPath, 'Contents', 'Frameworks');
 
-    // Qt frameworks on macOS are bundled as .framework
-    const qtFrameworks = [
-      'QtCore.framework',
-      'QtWidgets.framework',
-      'QtGui.framework',
-      'QtNetwork.framework',
-      'QtQml.framework',
-      'QtQuick.framework',
-      'Qt5Core.framework',
-      'Qt6Core.framework',
-    ];
-
     // Scan one level deep: vendors sometimes group Qt in a subdirectory
     // (WPS Office ships QtCoreKso.framework under Frameworks/office6/).
-    const items = listFrameworksDeep(frameworksDir).map((entry) => entry.name);
+    const deepEntries = listFrameworksDeep(frameworksDir);
+    const items = deepEntries.map((entry) => entry.name);
 
     // Qt frameworks (e.g. QtCore.framework, Qt6Core.framework, QtCoreKso.framework)
     for (const item of items) {
@@ -39,6 +54,18 @@ export function detect(appPath, platform) {
         evidence.push(item);
         if (evidence.length >= 3) break;
       }
+    }
+
+    // Try extracting Qt version from QtCore.framework or any Qt*Core.framework
+    const coreEntry = deepEntries.find(
+      (entry) =>
+        entry.name === 'QtCore.framework' ||
+        entry.name === 'Qt6Core.framework' ||
+        entry.name === 'Qt5Core.framework' ||
+        (entry.name.startsWith('QtCore') && entry.name.endsWith('.framework'))
+    );
+    if (coreEntry) {
+      frameworkVersion = readQtPlistVersion(path.join(coreEntry.dir, coreEntry.name));
     }
 
     // Some Qt apps ship Qt as dylib instead of framework
@@ -72,8 +99,13 @@ export function detect(appPath, platform) {
 
   if (evidence.length === 0) return null;
 
+  if (frameworkVersion) {
+    evidence.push(`Qt version: ${frameworkVersion}`);
+  }
+
   return {
     ...meta,
+    frameworkVersion: frameworkVersion || null,
     confidence: evidence.length >= 2 ? 'high' : 'medium',
     evidence,
   };

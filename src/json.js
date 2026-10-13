@@ -36,6 +36,8 @@ function toApp(result) {
     stack: result.stack,
     stackName: result.stackName,
     variant: result.variant ?? null,
+    frameworkVersion: result.frameworkVersion ?? null,
+    architecture: result.architecture ?? null,
     category: result.category,
     confidence: result.confidence,
     // Human-oriented strings. Not a stable API — do not parse these.

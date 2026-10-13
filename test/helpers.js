@@ -96,3 +96,53 @@ export function makeWindowsApp(root, name, spec = {}) {
 
   return dir;
 }
+
+/**
+ * Build a minimal Linux desktop app structure with an executable and a .desktop file.
+ *
+ * @param {string} root
+ * @param {string} name
+ * @param {object} [spec]
+ * @param {string} [spec.executable]
+ * @param {string} [spec.executableBody]
+ * @param {string} [spec.desktopContent]
+ * @param {string} [spec.desktopFileName]
+ * @param {string} [spec.binDir]
+ * @param {string} [spec.appsDir]
+ * @returns {{ execPath: string, desktopPath: string, binDir: string, appsDir: string }}
+ */
+export function makeLinuxApp(root, name, spec = {}) {
+  const {
+    executable = name.toLowerCase().replace(/\s+/g, '-'),
+    executableBody = '#!/bin/sh\necho "test"',
+    desktopContent,
+    desktopFileName = `${name.toLowerCase().replace(/\s+/g, '-')}.desktop`,
+    binDir = path.join(root, 'bin'),
+    appsDir = path.join(root, 'applications'),
+  } = spec;
+
+  const execPath = path.join(binDir, executable);
+  writeFile(execPath, executableBody);
+  try {
+    fs.chmodSync(execPath, 0o755);
+  } catch {
+    // ignore
+  }
+
+  const desktopPath = path.join(appsDir, desktopFileName);
+  const content =
+    desktopContent !== undefined
+      ? desktopContent
+      : [
+          '[Desktop Entry]',
+          'Type=Application',
+          `Name=${name}`,
+          `Exec=${execPath}`,
+        ].join('\n');
+
+  if (content !== null) {
+    writeFile(desktopPath, content);
+  }
+
+  return { execPath, desktopPath: content !== null ? desktopPath : null, binDir, appsDir };
+}
