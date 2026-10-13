@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] — 2026-10-14
+
+### Added
+
+- Added native CPU architecture detection across platforms:
+  - macOS Mach-O: Apple Silicon (`arm64`), Intel (`x86_64`), and Universal binaries (`universal`).
+  - Windows PE: `x86_64`, `x86`, and `arm64`.
+  - Linux ELF: `x86_64`, `arm64` (aarch64), and `x86`.
+- Added framework version extraction for Electron, Flutter, Qt, and Tauri.
+- Added side-by-side two-app comparison command (`buildby compare <app1> <app2>`) with convenient aliases `buildby vs` and `buildby pk`.
+- Added flicker-free interactive TUI application search with scrollable viewport (`buildby -i`), set as the default entry point when running `buildby` with no arguments in a terminal.
+- Added interactive multi-select comparison mode (`buildby vs` / `buildby pk`), allowing users to browse all applications, press Space to select 2 apps, and press Enter to compare.
+- Added Markdown (`--markdown`, `--md`) and CSV (`--csv`, RFC 4180 compliant) report export formats.
+- Added Linux desktop application support, scanning standard desktop directories, `.desktop` entries, Flatpak, and Snap packages.
+- Added detection for Neutralinojs (`--neutralino`) and Sciter (`--sciter`) frameworks.
+- Added zero-subprocess pure JS Mach-O linked library parsing (`LC_LOAD_DYLIB`), removing dependence on external `otool -L`.
+- Expanded test suite with 81 new unit tests (now 121 tests in total, all passing).
+
+### Changed
+
+- Default invocation (`buildby` with no arguments in an interactive terminal) now launches interactive fuzzy search instead of showing help.
+- Replaced external `strings` subprocess in Tauri detector with stream-chunked `binaryContainsAny`.
+- Public JSON payload envelope now includes `architecture` and `frameworkVersion`.
+
 ## [1.3.1] — 2026-09-15
 
 ### Added
