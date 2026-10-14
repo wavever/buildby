@@ -4,6 +4,7 @@ import os from 'os';
 
 const DEFAULT_CONFIG = {
   cache: true,
+  checkForUpdates: true,
   excludeApps: [],
 };
 
@@ -77,6 +78,7 @@ export function loadConfig() {
 
     return {
       cache: parsed.cache !== false,
+      checkForUpdates: parsed.checkForUpdates !== false,
       excludeApps: Array.isArray(parsed.excludeApps)
         ? parsed.excludeApps.filter((item) => typeof item === 'string' && item.trim())
         : [],

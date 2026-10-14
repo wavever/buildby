@@ -352,10 +352,12 @@ const translations = {
  *
  * @param {string} key
  * @param {Record<string, string|number>} [vars]
+ * @param {string} [locale=LOCALE]
  * @returns {string}
  */
-export function t(key, vars = {}) {
+export function t(key, vars = {}, locale = LOCALE) {
   const str =
+    translations[locale]?.[key] ??
     translations[LOCALE]?.[key] ??
     translations.en[key] ??
     key;

@@ -159,14 +159,16 @@ export function renderUpdateBox({
   selectedIndex = 0,
   isZh = LOCALE.startsWith('zh'),
 }) {
-  const title = ` ${t('update_prompt_title')} `;
-  const versionLine = `buildby ${chalk.dim(currentVersion)} → ${chalk.bold.green(latestVersion)}`;
-  const releaseUrl = 'https://github.com/wavever/buildby/releases';
-  const urlLine = chalk.dim(t('update_prompt_changelog', { url: chalk.underline(releaseUrl) }));
-  const question = t('update_prompt_question');
+  const tr = (k, v) => t(k, v, isZh ? 'zh' : 'en');
 
-  const opt1Text = t('update_prompt_opt_update');
-  const opt2Text = t('update_prompt_opt_skip');
+  const title = ` ${tr('update_prompt_title')} `;
+  const versionLine = `${chalk.bold.white('buildby')} ${chalk.dim(currentVersion)} ${chalk.bold.yellow('→')} ${chalk.bold.green(latestVersion)}`;
+  const releaseUrl = 'https://github.com/wavever/buildby/releases';
+  const urlLine = chalk.dim(tr('update_prompt_changelog', { url: chalk.underline.cyan(releaseUrl) }));
+  const question = chalk.bold(tr('update_prompt_question'));
+
+  const opt1Text = tr('update_prompt_opt_update');
+  const opt2Text = tr('update_prompt_opt_skip');
 
   const opt1 = selectedIndex === 0
     ? chalk.cyan.bold(`❯ ${opt1Text}`)
@@ -175,13 +177,13 @@ export function renderUpdateBox({
     ? chalk.cyan.bold(`❯ ${opt2Text}`)
     : chalk.gray(`  ${opt2Text}`);
 
-  const hint = chalk.dim(t('update_prompt_hint'));
+  const hint = chalk.dim(tr('update_prompt_hint'));
 
   const rawLines = [
     versionLine,
     urlLine,
     '',
-    chalk.bold(question),
+    question,
     opt1,
     opt2,
     '',
@@ -203,7 +205,7 @@ export function renderUpdateBox({
   const paddedLines = rawLines.map((line) => {
     const w = stringWidth(line);
     const pad = Math.max(0, boxWidth - 2 - w);
-    return `${chalk.yellow('│')} ${line}${' '.repeat(pad)}${chalk.yellow('│')}`;
+    return `${chalk.yellow('│')} ${line}${' '.repeat(pad)} ${chalk.yellow('│')}`;
   });
 
   return [topBorder, ...paddedLines, bottomBorder].join('\n');
@@ -305,21 +307,33 @@ export function promptUpdateSelection({
           return;
         }
 
+        // y / Y -> update
+        if (str === 'y' || str === 'Y') {
+          finish('update');
+          return;
+        }
+
+        // n / N -> skip
+        if (str === 'n' || str === 'N') {
+          finish('skip');
+          return;
+        }
+
         // Enter or Space
         if (key.name === 'return' || key.name === 'enter' || str === ' ') {
           finish(selectedIndex === 0 ? 'update' : 'skip');
           return;
         }
 
-        // Escape or 'q'
-        if (key.name === 'escape' || str === 'q') {
+        // Escape or 'q' / 'Q'
+        if (key.name === 'escape' || str === 'q' || str === 'Q') {
           finish('skip');
         }
       },
       (line) => {
         // Line-based fallback for tests or non-raw inputs
-        const trimmed = (line || '').trim();
-        if (trimmed === '1' || trimmed.toLowerCase().includes('update')) {
+        const trimmed = (line || '').trim().toLowerCase();
+        if (trimmed === '1' || trimmed === 'y' || trimmed === 'yes' || trimmed.includes('update')) {
           finish('update');
         } else {
           finish('skip');

@@ -92,9 +92,42 @@ describe('renderUpdateBox', () => {
 
     assert.ok(box.includes('1.3.1'));
     assert.ok(box.includes('1.4.0'));
-    assert.ok(box.includes('Update Available') || box.includes('发现新版本'));
-    assert.ok(box.includes('Update now') || box.includes('立即升级'));
-    assert.ok(box.includes('Skip') || box.includes('跳过'));
+    assert.ok(box.includes('Update Available'));
+    assert.ok(box.includes('Update now and continue'));
+    assert.ok(box.includes('Skip for now'));
+  });
+
+  test('renders box with version diff and options in Chinese', () => {
+    const box = renderUpdateBox({
+      currentVersion: '1.3.1',
+      latestVersion: '1.4.0',
+      selectedIndex: 0,
+      isZh: true,
+    });
+
+    assert.ok(box.includes('1.3.1'));
+    assert.ok(box.includes('1.4.0'));
+    assert.ok(box.includes('发现新版本'));
+    assert.ok(box.includes('立即升级并在完成后继续执行'));
+    assert.ok(box.includes('稍后升级（跳过）'));
+  });
+
+  test('ensures all rendered box lines have exact identical terminal width', async () => {
+    const sw = (await import('string-width')).default;
+    for (const isZh of [true, false]) {
+      const box = renderUpdateBox({
+        currentVersion: '1.3.1',
+        latestVersion: '1.4.0',
+        selectedIndex: 0,
+        isZh,
+      });
+      const lines = box.split('\n');
+      const widths = lines.map((l) => sw(l));
+      const firstWidth = widths[0];
+      for (let i = 0; i < widths.length; i++) {
+        assert.equal(widths[i], firstWidth, `Line ${i} width ${widths[i]} should equal ${firstWidth} in isZh=${isZh}`);
+      }
+    }
   });
 
   test('renders box with selection indicator moving based on selectedIndex', () => {
@@ -200,6 +233,99 @@ describe('promptUpdateSelection', () => {
     const choice = await promptPromise;
     assert.equal(choice, 'skip');
   });
+
+  test('supports key "y" to update directly', async () => {
+    const { EventEmitter } = await import('events');
+    const input = new EventEmitter();
+    input.isTTY = true;
+    input.setRawMode = () => {};
+    input.resume = () => {};
+    input.pause = () => {};
+
+    const output = { isTTY: true, write: () => {} };
+
+    const promptPromise = promptUpdateSelection({
+      currentVersion: '1.3.1',
+      latestVersion: '1.4.0',
+      input,
+      output,
+    });
+
+    input.emit('keypress', 'y', { name: 'y' });
+
+    const choice = await promptPromise;
+    assert.equal(choice, 'update');
+  });
+
+  test('supports key "n" to skip directly', async () => {
+    const { EventEmitter } = await import('events');
+    const input = new EventEmitter();
+    input.isTTY = true;
+    input.setRawMode = () => {};
+    input.resume = () => {};
+    input.pause = () => {};
+
+    const output = { isTTY: true, write: () => {} };
+
+    const promptPromise = promptUpdateSelection({
+      currentVersion: '1.3.1',
+      latestVersion: '1.4.0',
+      input,
+      output,
+    });
+
+    input.emit('keypress', 'n', { name: 'n' });
+
+    const choice = await promptPromise;
+    assert.equal(choice, 'skip');
+  });
+
+  test('supports key "escape" to skip', async () => {
+    const { EventEmitter } = await import('events');
+    const input = new EventEmitter();
+    input.isTTY = true;
+    input.setRawMode = () => {};
+    input.resume = () => {};
+    input.pause = () => {};
+
+    const output = { isTTY: true, write: () => {} };
+
+    const promptPromise = promptUpdateSelection({
+      currentVersion: '1.3.1',
+      latestVersion: '1.4.0',
+      input,
+      output,
+    });
+
+    input.emit('keypress', '', { name: 'escape' });
+
+    const choice = await promptPromise;
+    assert.equal(choice, 'skip');
+  });
+
+  test('supports numeric selection: pressing "2" then enter selects skip', async () => {
+    const { EventEmitter } = await import('events');
+    const input = new EventEmitter();
+    input.isTTY = true;
+    input.setRawMode = () => {};
+    input.resume = () => {};
+    input.pause = () => {};
+
+    const output = { isTTY: true, write: () => {} };
+
+    const promptPromise = promptUpdateSelection({
+      currentVersion: '1.3.1',
+      latestVersion: '1.4.0',
+      input,
+      output,
+    });
+
+    input.emit('keypress', '2', { name: '2' });
+    input.emit('keypress', '\r', { name: 'enter' });
+
+    const choice = await promptPromise;
+    assert.equal(choice, 'skip');
+  });
 });
 
 describe('checkAndUpdateIfNeeded', () => {
@@ -265,6 +391,26 @@ describe('checkAndUpdateIfNeeded', () => {
     });
 
     assert.equal(res.updated, false);
+  });
+});
+
+describe('loadConfig update setting', () => {
+  test('respects checkForUpdates in config.json', async () => {
+    const { loadConfig } = await import('../src/config.js');
+    const os = (await import('os')).default;
+    const tmpConfig = path.join(os.tmpdir(), `buildby-test-cfg-${Date.now()}.json`);
+    fs.writeFileSync(tmpConfig, JSON.stringify({ checkForUpdates: false }));
+    const prev = process.env.BUILDBY_CONFIG;
+    process.env.BUILDBY_CONFIG = tmpConfig;
+
+    try {
+      const cfg = loadConfig();
+      assert.equal(cfg.checkForUpdates, false);
+    } finally {
+      if (prev !== undefined) process.env.BUILDBY_CONFIG = prev;
+      else delete process.env.BUILDBY_CONFIG;
+      try { fs.unlinkSync(tmpConfig); } catch {}
+    }
   });
 });
 
