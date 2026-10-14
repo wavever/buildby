@@ -83,9 +83,17 @@ node bin/buildby.js
 
 > 早期发布名为 `desktop-app-build-by`，现已**弃用**，请改用 `npm i -g @wavever/buildby`。CLI 命令保持为 `buildby`。详情见 [CHANGELOG.md](./CHANGELOG.md)。
 
-#### 升级
+#### 自动检查更新与手动升级
+
+在交互式终端中，`buildby` 在执行命令前会自动进行快速、轻量的版本检查：
+
+- **交互式弹窗**：当发现新版本时，终端会弹出类似 Codex 的更新提示框。
+- **全键盘选择**：使用方向键 `↑` / `↓` 或数字键 `1` / `2` 切换 **立即升级** 或 **稍后升级（跳过）**，按 `Enter` 确认（按 `q` 或 `Esc` 快速跳过）。
+- **无感继续执行**：选择升级后，`buildby` 会自动通过 npm 安装最新版本，并在安装完成后**直接调用新版本继续执行您原本输入的命令**！
+- **跳过检查**：支持添加 `--no-update-check` 参数、设置环境变量 `BUILDBY_NO_UPDATE_CHECK=1`，或在 `config.json` 中配置 `"checkForUpdates": false`。
 
 ```bash
+# 手动升级命令：
 buildby update           # 检查新版本并直接安装
 buildby update --check   # 仅检查是否有新版本，不安装
 ```

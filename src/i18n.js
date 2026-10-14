@@ -146,8 +146,9 @@ const translations = {
     compare_title: 'Application Comparison',
     cmd_update: 'Update buildby to the latest published version',
     cmd_update_check: 'Only report whether an update exists, without installing',
+    cmd_no_update_check: 'Do not check for updates before running command',
 
-    // ── update command ───────────────────────────────────────────────────────
+    // ── update command & prompt ───────────────────────────────────────────────
     update_checking: 'Checking for updates…',
     update_check_failed: 'Could not reach the npm registry',
     update_check_hint: 'Check your network, then verify `npm view {pkg} version` works.',
@@ -156,6 +157,15 @@ const translations = {
     update_local_install: 'This copy runs from {root}, which npm does not manage. Update it with git pull, or install the release with: npm i -g {pkg}',
     update_failed: 'Update failed. Try running: npm i -g {pkg}@latest',
     update_success: 'Updated to buildby {version}',
+    update_prompt_title: 'Update Available',
+    update_prompt_question: 'Would you like to update buildby now?',
+    update_prompt_opt_update: '1. Update now and continue',
+    update_prompt_opt_skip: '2. Skip for now',
+    update_prompt_hint: '(Use ↑/↓ or 1-2 to select, Enter to confirm, q to skip)',
+    update_prompt_changelog: 'Changelog: {url}',
+    update_updating: 'Updating {pkg} to {latest}…',
+    update_restarting: 'Update complete! Re-launching with new version…',
+    update_failed_continue: 'Update failed. Continuing with current version…',
     cmd_filter: 'Show all apps built with {name}',
     cmd_appname: 'Name of the app to inspect (supports fuzzy match)',
 
@@ -285,8 +295,9 @@ const translations = {
     compare_title: '应用对比分析',
     cmd_update: '将 buildby 升级到最新发布版本',
     cmd_update_check: '仅检查是否有新版本，不执行安装',
+    cmd_no_update_check: '执行命令前不检查更新',
 
-    // ── update command ───────────────────────────────────────────────────────
+    // ── update command & prompt ───────────────────────────────────────────────
     update_checking: '正在检查更新…',
     update_check_failed: '无法访问 npm registry',
     update_check_hint: '请检查网络，并确认 `npm view {pkg} version` 可以正常执行。',
@@ -295,6 +306,15 @@ const translations = {
     update_local_install: '当前运行的副本位于 {root}，不由 npm 管理。请用 git pull 更新，或改为安装发布版：npm i -g {pkg}',
     update_failed: '升级失败。可手动执行：npm i -g {pkg}@latest',
     update_success: '已升级到 buildby {version}',
+    update_prompt_title: '发现新版本',
+    update_prompt_question: '是否立即更新 buildby？',
+    update_prompt_opt_update: '1. 立即升级并在完成后继续执行',
+    update_prompt_opt_skip: '2. 稍后升级（跳过）',
+    update_prompt_hint: '(使用 ↑/↓ 或 1/2 选择，Enter 确认，q 跳过)',
+    update_prompt_changelog: '更新日志: {url}',
+    update_updating: '正在将 {pkg} 升级到 {latest}…',
+    update_restarting: '升级完成！正在调用新版本继续执行…',
+    update_failed_continue: '升级失败，继续使用当前版本执行…',
     cmd_filter: '显示所有使用 {name} 构建的应用',
     cmd_appname: '要查询的应用名称（支持模糊匹配）',
 

@@ -27,6 +27,7 @@ import {
   fetchLatestVersion,
   getPackageRoot,
   runGlobalInstall,
+  checkAndUpdateIfNeeded,
   PACKAGE_NAME,
 } from './update.js';
 import { formatMarkdown, formatCsv } from './formatters.js';
@@ -54,7 +55,7 @@ const STACK_SHORT_FLAGS = {
   native: 'n',
 };
 
-export function run() {
+export async function run() {
   program
     .name('buildby')
     .description(t('cmd_description'))
@@ -67,11 +68,32 @@ export function run() {
     .addOption(new Option('--scan', t('cmd_scan_legacy')).hideHelp())
     .option('--path <dir>', t('cmd_path'))
     .option('--no-cache', t('cmd_no_cache'))
+    .option('--no-update-check', t('cmd_no_update_check'))
     .option('--json', t('cmd_json'))
     .option('--markdown', t('cmd_markdown'))
     .option('--md', t('cmd_markdown'))
     .option('--csv', t('cmd_csv'))
     .option('-i, --interactive', t('cmd_interactive'));
+
+  // ─── Pre-action hook: check for updates before command runs ─────────────────
+  program.hook('preAction', async (thisCommand, actionCommand) => {
+    if (actionCommand.name() === 'update') return;
+
+    const config = loadConfig();
+    const opts = program.opts();
+    if (opts.updateCheck === false) return;
+    if (opts.json || opts.markdown || opts.md || opts.csv) return;
+
+    const res = await checkAndUpdateIfNeeded({
+      currentVersion: pkg.version,
+      argv: process.argv,
+      config,
+    });
+
+    if (res && res.updated) {
+      await new Promise(() => {});
+    }
+  });
 
   // ─── buildby --<stack> filter flags ───────────────────────────────────────
   for (const meta of ALL_STACK_METAS) {
@@ -185,7 +207,7 @@ export function run() {
     program.help();
   });
 
-  program.parse();
+  await program.parseAsync();
 }
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────

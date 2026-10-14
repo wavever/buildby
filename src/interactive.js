@@ -60,7 +60,7 @@ export function findMatchingApps(apps, query, limit = Infinity) {
 /**
  * Set up terminal keypress and raw mode, with fallback for non-TTY streams.
  */
-function setupInputListener(input, output, onKeypress, onLine) {
+export function setupInputListener(input, output, onKeypress, onLine) {
   readline.emitKeypressEvents(input);
   const isTTY = !!input.isTTY && typeof input.setRawMode === 'function';
 

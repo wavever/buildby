@@ -83,9 +83,17 @@ node bin/buildby.js
 
 > Previously published as `desktop-app-build-by`. That name is now **deprecated** — please switch to `npm i -g @wavever/buildby`. The CLI command stays `buildby`. See [CHANGELOG.md](./CHANGELOG.md) for details.
 
-### Update
+### Automatic Update Prompt & Manual Update
+
+In an interactive terminal, `buildby` checks whether a newer release is published before executing your command:
+
+- **Interactive Dialog**: If an update exists, a notification box is shown.
+- **Keyboard Navigation**: Use `↑` / `↓` or `1`/`2` to select **Update now and continue** or **Skip for now**, and press `Enter` (or `q` / `Esc` to skip).
+- **Seamless Execution**: When you choose update, `buildby` installs the release globally and immediately re-launches your original command using the new version.
+- **Opt-out**: Pass `--no-update-check`, set `BUILDBY_NO_UPDATE_CHECK=1`, or configure `"checkForUpdates": false` in `config.json`.
 
 ```bash
+# Manual update commands:
 buildby update           # Check for a newer release and install it
 buildby update --check   # Only report whether an update exists
 ```
