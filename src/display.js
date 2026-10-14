@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import stringWidth from 'string-width';
-import { t, stackDesc } from './i18n.js';
+import { t, stackDesc, LOCALE } from './i18n.js';
 import { formatSize } from './analyzer.js';
 import { ALL_STACK_METAS } from './detectors/index.js';
 
@@ -91,34 +91,155 @@ export function colorStack(stackId, text) {
 /**
  * Pad a label string to a fixed visual display width.
  */
-function padLabel(str, width = 14) {
+/**
+ * Safely truncate a string to a visual width using stringWidth.
+ */
+function truncateByDisplayWidth(str, maxW) {
   const s = String(str ?? '');
-  const w = stringWidth(s);
-  return w >= width ? s : s + ' '.repeat(width - w);
+  if (stringWidth(s) <= maxW) return s;
+  let out = '';
+  for (const ch of s) {
+    if (stringWidth(out + ch + '…') > maxW) break;
+    out += ch;
+  }
+  return out + '…';
 }
 
 /**
- * Render an elegant section divider header with icon and rule.
+ * Smart middle truncation for file paths (e.g. /Applications/.../App.app).
  */
-function renderSectionDivider(icon, title) {
-  const text = `  ${icon} ${chalk.bold(title)} `;
-  const w = stringWidth(text);
-  const termCols = process.stdout.columns || 80;
-  const maxLine = Math.min(68, Math.max(30, termCols - 4));
-  return text + chalk.dim('─'.repeat(Math.max(6, maxLine - w)));
+function truncatePathMiddle(p, maxW) {
+  const s = String(p ?? '');
+  if (stringWidth(s) <= maxW) return s;
+  if (maxW <= 7) return truncateByDisplayWidth(s, maxW);
+  const partW = Math.floor((maxW - 3) / 2);
+  let start = '';
+  for (const ch of s) {
+    if (stringWidth(start + ch) > partW) break;
+    start += ch;
+  }
+  let end = '';
+  for (let i = s.length - 1; i >= 0; i--) {
+    const ch = s[i];
+    if (stringWidth(ch + end) > (maxW - 3 - stringWidth(start))) break;
+    end = ch + end;
+  }
+  return `${start}…${end}`;
 }
 
 /**
- * Render the signature & notarization section for a single app.
- * No-ops when no signature data was collected (batch-scan path).
+ * Format a cell to exact display width, ensuring border alignment across all terminals.
+ */
+function formatBentoCell(label, val, width, valColor = (s) => s) {
+  const labelW = stringWidth(label);
+  const valMaxW = Math.max(0, width - labelW);
+  const truncatedVal = truncateByDisplayWidth(val, valMaxW);
+  const cellContent = label + valColor(truncatedVal);
+  const pad = Math.max(0, width - stringWidth(cellContent));
+  return cellContent + ' '.repeat(pad);
+}
+
+/**
+ * Render Bento Box card string for a single application detail.
+ * Guarantees 100% strict column width alignment across all card borders.
  * @param {import('./analyzer.js').AnalysisResult} result
+ * @returns {string}
  */
-function renderSecurity(result) {
+export function renderBentoCard(result) {
+  const boxInnerWidth = 72;
+  const col1Width = 33;
+  const col2Width = boxInnerWidth - 3 - col1Width; // 36
+  const border = chalk.dim;
+  const indent = '  ';
+
+  function renderFullLine(content = '') {
+    const w = stringWidth(content);
+    const pad = Math.max(0, boxInnerWidth - w);
+    return `${indent}${border('│')} ${content}${' '.repeat(pad)} ${border('│')}`;
+  }
+
+  function renderTwoColLine(c1 = '', c2 = '') {
+    const w1 = stringWidth(c1);
+    const pad1 = Math.max(0, col1Width - w1);
+    const w2 = stringWidth(c2);
+    const pad2 = Math.max(0, col2Width - w2);
+    return `${indent}${border('│')} ${c1}${' '.repeat(pad1)} ${border('│')} ${c2}${' '.repeat(pad2)} ${border('│')}`;
+  }
+
+  const lines = [];
+
+  // Top Border
+  lines.push(indent + border('╭' + '─'.repeat(boxInnerWidth + 2) + '╮'));
+
+  // Header Line 1: App Name + OS/Arch tag
+  const ver = result.metadata?.version ? ` (v${result.metadata.version})` : '';
+  const archTag = result.architecture && result.architecture !== 'unknown'
+    ? (result.architecture === 'universal' ? 'Universal' : result.architecture)
+    : '';
+  const osLabel = result.platform === 'darwin' ? 'macOS' : (result.platform === 'win32' ? 'Windows' : 'Linux');
+  const platArch = [osLabel, archTag].filter(Boolean).join(' · ');
+  const rightBadge = chalk.dim(platArch);
+  const maxTitleW = boxInnerWidth - stringWidth(rightBadge) - 2;
+  const titleLeft = chalk.bold.white(truncateByDisplayWidth(`📦 ${result.name}${ver}`, maxTitleW));
+  const spaceHeader = Math.max(1, boxInnerWidth - stringWidth(titleLeft) - stringWidth(rightBadge));
+  lines.push(renderFullLine(titleLeft + ' '.repeat(spaceHeader) + rightBadge));
+
+  // Header Line 2: Path
+  const maxPathW = boxInnerWidth - 3;
+  const pathStr = truncatePathMiddle(result.path, maxPathW);
+  lines.push(renderFullLine(chalk.dim(`📂 ${pathStr}`)));
+
+  lines.push(indent + border('├' + '─'.repeat(boxInnerWidth + 2) + '┤'));
+
+  // Hero Section: Stack & Category
+  const catBadge = result.category === 'native'
+    ? chalk.bgGreen.black(t('badge_native'))
+    : chalk.bgCyan.black(t('badge_cross'));
+
+  const icon = STACK_ICONS[result.stack] || '❓';
+  const colorFn = STACK_COLORS[result.stack] || chalk.white;
+  const fwVer = result.frameworkVersion ? chalk.dim(' · ') + colorFn.bold(`v${result.frameworkVersion}`) : '';
+  const heroBadge = `${catBadge}  ${icon} ${colorFn.bold(result.stackName)}${fwVer}`;
+  lines.push(renderFullLine(heroBadge));
+
+  const desc = stackDesc(result.stack, result.description);
+  if (desc) {
+    lines.push(renderFullLine(chalk.dim(truncateByDisplayWidth(desc, boxInnerWidth))));
+  }
+  if (result.website) {
+    const web = truncateByDisplayWidth(result.website, boxInnerWidth - 3);
+    lines.push(renderFullLine(chalk.dim('🌐 ') + chalk.dim.underline(web)));
+  }
+
+  // Specifications
+  const specs = [];
+  if (result.architecture && result.architecture !== 'unknown') {
+    let archLabel = result.architecture;
+    if (result.architecture === 'universal') {
+      archLabel = LOCALE.startsWith('zh') ? 'Universal (双架构)' : 'Universal (arm64 + x64)';
+    } else if (result.architecture === 'arm64' && result.platform === 'darwin') {
+      archLabel = 'Apple Silicon (arm64)';
+    } else if (result.architecture === 'x86_64') {
+      archLabel = 'Intel (x86_64)';
+    }
+    const archColor = (result.architecture === 'arm64' || result.architecture === 'universal') ? chalk.green : chalk.yellow;
+    specs.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_spec_arch')}: `, archLabel, col1Width, archColor));
+  }
+  if (result.sizeBytes > 0) {
+    specs.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_spec_size')}: `, formatSize(result.sizeBytes), col1Width, chalk.bold.white));
+  }
+  if (result.metadata?.version) {
+    specs.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_spec_version')}: `, result.metadata.version, col1Width));
+  }
+  if (result.metadata?.bundleId) {
+    specs.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_spec_bundle_id')}: `, result.metadata.bundleId, col1Width, chalk.dim));
+  }
+
+  // Security
+  const sec = [];
   const sig = result.signature;
   const not = result.notarization;
-  if (!sig && !not) return;
 
-  const rows = [];
   if (result.platform === 'darwin') {
     if (sig) {
       let label = t('sec_signed_valid');
@@ -133,20 +254,12 @@ function renderSecurity(result) {
         color = chalk.yellow;
         badge = '⚠';
       }
-      rows.push({
-        label: t('label_sec_signature'),
-        val: color(`${badge} ${label}`) + (sig.signed ? chalk.dim(' (Valid)') : ''),
-      });
-    }
+      sec.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_sec_signature')}: `, `${badge} ${label}`, col2Width, color));
 
-    if (sig?.developer) {
-      const devVal = sig.teamId
-        ? `${sig.developer} ${chalk.dim('(Team ID: ' + sig.teamId + ')')}`
-        : sig.developer;
-      rows.push({
-        label: t('label_sec_developer'),
-        val: devVal,
-      });
+      if (sig.developer) {
+        const devVal = sig.teamId ? `${sig.developer} (${sig.teamId})` : sig.developer;
+        sec.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_sec_developer')}: `, devVal, col2Width, chalk.dim));
+      }
     }
 
     if (not) {
@@ -166,145 +279,79 @@ function renderSecurity(result) {
         notColor = chalk.yellow;
         badge = '⚠';
       }
-      const sourceSuffix = (not.source && not.source !== 'Apple System' && !/Mac App Store/i.test(not.source))
-        ? chalk.dim(` (${not.source})`)
-        : '';
-      rows.push({
-        label: t('label_sec_notarization'),
-        val: notColor(`${badge} ${notLabel}`) + sourceSuffix,
-      });
+      sec.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_sec_notarization')}: `, `${badge} ${notLabel}`, col2Width, notColor));
     } else if (sig?.notarizationTicket) {
-      rows.push({
-        label: t('label_sec_notarization'),
-        val: chalk.green(`✓ ${t('sec_stapled_ticket')}`),
-      });
+      sec.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_sec_notarization')}: `, `✓ ${t('sec_stapled_ticket')}`, col2Width, chalk.green));
     }
 
-    if (sig) {
+    if (sig?.hardenedRuntime !== undefined) {
       const hr = sig.hardenedRuntime
-        ? chalk.green(`✓ ${t('sec_hardened_enabled')}`) + chalk.dim(' (Hardened Runtime)')
-        : chalk.yellow(`✗ ${t('sec_hardened_disabled')}`);
-      rows.push({
-        label: t('label_sec_hardened'),
-        val: hr,
-      });
+        ? `✓ ${t('sec_hardened_enabled')}`
+        : `✗ ${t('sec_hardened_disabled')}`;
+      const hrColor = sig.hardenedRuntime ? chalk.green : chalk.yellow;
+      sec.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_sec_hardened')}: `, hr, col2Width, hrColor));
     }
   } else if (result.platform === 'win32' && sig) {
     if (sig.publisher) {
-      rows.push({
-        label: t('label_sec_publisher'),
-        val: sig.publisher,
-      });
+      sec.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_sec_publisher')}: `, sig.publisher, col2Width, chalk.dim));
     }
     const status = sig.status || (sig.signed ? 'Valid' : 'NotSigned');
     const color = sig.signed ? chalk.green : (status === 'NotSigned' ? chalk.red : chalk.yellow);
     const badge = sig.signed ? '✓' : (status === 'NotSigned' ? '✗' : '⚠');
-    rows.push({
-      label: t('label_sec_signature'),
-      val: color(`${badge} ${status}`),
-    });
+    sec.push(formatBentoCell(`  ${chalk.dim('•')} ${t('label_sec_signature')}: `, `${badge} ${status}`, col2Width, color));
   }
 
-  if (rows.length === 0) return;
+  const hasEvidence = Boolean(result.evidence && result.evidence.length > 0);
 
-  console.log(renderSectionDivider('🔒', t('section_security')));
-  for (const s of rows) {
-    console.log(`    ${chalk.dim('•')} ${chalk.dim(padLabel(s.label, 14))} ${s.val}`);
+  // Middle Section: 2-column or 1-column
+  if (sec.length > 0) {
+    lines.push(indent + border('├' + '─'.repeat(col1Width + 2) + '┬' + '─'.repeat(col2Width + 2) + '┤'));
+    lines.push(renderTwoColLine(chalk.bold(`📋 ${t('section_specs')}`), chalk.bold(`🔒 ${t('section_security')}`)));
+    const rowCount = Math.max(specs.length, sec.length);
+    for (let i = 0; i < rowCount; i++) {
+      lines.push(renderTwoColLine(specs[i] || '', sec[i] || ''));
+    }
+    if (hasEvidence) {
+      lines.push(indent + border('├' + '─'.repeat(col1Width + 2) + '┴' + '─'.repeat(col2Width + 2) + '┤'));
+    } else {
+      lines.push(indent + border('╰' + '─'.repeat(col1Width + 2) + '┴' + '─'.repeat(col2Width + 2) + '╯'));
+    }
+  } else if (specs.length > 0) {
+    lines.push(indent + border('├' + '─'.repeat(boxInnerWidth + 2) + '┤'));
+    lines.push(renderFullLine(chalk.bold(`📋 ${t('section_specs')}`)));
+    for (const s of specs) {
+      lines.push(renderFullLine(s));
+    }
+    if (hasEvidence) {
+      lines.push(indent + border('├' + '─'.repeat(boxInnerWidth + 2) + '┤'));
+    } else {
+      lines.push(indent + border('╰' + '─'.repeat(boxInnerWidth + 2) + '╯'));
+    }
   }
-  console.log();
+
+  // Evidence Section (if present)
+  if (hasEvidence) {
+    if (sec.length === 0 && specs.length === 0) {
+      lines.push(indent + border('├' + '─'.repeat(boxInnerWidth + 2) + '┤'));
+    }
+    lines.push(renderFullLine(chalk.bold(`🔍 ${t('section_evidence')}`)));
+    for (const e of result.evidence) {
+      lines.push(renderFullLine(`  ${chalk.cyan('•')} ${truncateByDisplayWidth(e, boxInnerWidth - 5)}`));
+    }
+    lines.push(indent + border('╰' + '─'.repeat(boxInnerWidth + 2) + '╯'));
+  }
+
+  return lines.join('\n');
 }
 
 /**
- * Print a single app's tech stack details with modern visual hierarchy and aligned specs.
+ * Print a single app's tech stack details in Bento Box card style.
  * @param {import('./analyzer.js').AnalysisResult} result
  */
 export function printAppDetail(result) {
-  const icon = STACK_ICONS[result.stack] || '❓';
-  const colorFn = STACK_COLORS[result.stack] || chalk.white;
-
   console.log();
-  const ver = result.metadata?.version ? chalk.dim(` (v${result.metadata.version})`) : '';
-  console.log(`  ${chalk.bold.white('📦 ' + result.name)}${ver}`);
-  console.log(`  ${chalk.dim('📂 ' + result.path)}\n`);
-
-  // Hero Verdict Banner
-  const categoryBadge =
-    result.category === 'native'
-      ? chalk.bgGreen.black(t('badge_native'))
-      : chalk.bgCyan.black(t('badge_cross'));
-
-  const fwVer = result.frameworkVersion ? chalk.dim(' · ') + chalk.cyan.bold('v' + result.frameworkVersion) : '';
-  console.log(`  ${categoryBadge}  ${icon} ${colorFn.bold(result.stackName)}${fwVer}`);
-
-  const desc = stackDesc(result.stack, result.description);
-  if (desc) {
-    console.log(`  ${chalk.dim(desc)}`);
-  }
-  if (result.website) {
-    console.log(`  ${chalk.dim('🌐 ' + chalk.underline(result.website))}`);
-  }
+  console.log(renderBentoCard(result));
   console.log();
-
-  // Section 1: Specifications (核心规格)
-  const specs = [];
-  if (result.architecture && result.architecture !== 'unknown') {
-    let archLabel = result.architecture;
-    if (result.architecture === 'universal') {
-      archLabel = 'Universal (Apple Silicon · Intel)';
-    } else if (result.architecture === 'arm64' && result.platform === 'darwin') {
-      archLabel = 'Apple Silicon (arm64)';
-    } else if (result.architecture === 'x86_64') {
-      archLabel = 'Intel (x86_64)';
-    }
-    const archColor = (result.architecture === 'arm64' || result.architecture === 'universal')
-      ? chalk.green
-      : chalk.yellow;
-    specs.push({
-      label: t('label_spec_arch'),
-      val: archColor(archLabel),
-    });
-  }
-
-  if (result.sizeBytes > 0) {
-    specs.push({
-      label: t('label_spec_size'),
-      val: chalk.bold.white(formatSize(result.sizeBytes)),
-    });
-  }
-
-  if (result.metadata?.version) {
-    specs.push({
-      label: t('label_spec_version'),
-      val: result.metadata.version,
-    });
-  }
-
-  if (result.metadata?.bundleId) {
-    specs.push({
-      label: t('label_spec_bundle_id'),
-      val: chalk.dim(result.metadata.bundleId),
-    });
-  }
-
-  if (specs.length > 0) {
-    console.log(renderSectionDivider('📋', t('section_specs')));
-    for (const s of specs) {
-      console.log(`    ${chalk.dim('•')} ${chalk.dim(padLabel(s.label, 14))} ${s.val}`);
-    }
-    console.log();
-  }
-
-  // Section 2: Detection Evidence (判定依据)
-  if (result.evidence && result.evidence.length > 0) {
-    console.log(renderSectionDivider('🔍', t('section_evidence')));
-    for (const e of result.evidence) {
-      console.log(`    ${chalk.cyan('•')} ${e}`);
-    }
-    console.log();
-  }
-
-  // Section 3: Security & Trust (签名与安全)
-  renderSecurity(result);
 }
 
 /**

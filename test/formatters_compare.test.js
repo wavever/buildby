@@ -429,7 +429,7 @@ describe('compare command aliases', () => {
   });
 });
 
-describe('printAppDetail', () => {
+describe('printAppDetail & renderBentoCard', () => {
   test('renders structured inspection report with key sections and aligned specs', async () => {
     const { printAppDetail } = await import('../src/display.js');
     const app = createMockApp({
@@ -463,5 +463,44 @@ describe('printAppDetail', () => {
     assert.ok(output.includes('app.asar'));
     assert.ok(output.includes('签名与安全') || output.includes('Security & Trust'));
     assert.ok(output.includes('Microsoft Corporation'));
+  });
+
+  test('ensures all rendered Bento Box card lines have exact identical terminal width', async () => {
+    const { renderBentoCard } = await import('../src/display.js');
+    const stringWidth = (await import('string-width')).default;
+
+    const testApps = [
+      createMockApp({
+        name: 'Standard App',
+        path: '/Applications/Standard.app',
+        architecture: 'arm64',
+        sizeBytes: 200 * 1024 * 1024,
+      }),
+      createMockApp({
+        name: 'Super Long Application Name With Extra Detail That Might Overflow The Card Borders (Preview Edition)',
+        path: '/Users/someone/Library/Application Support/LongDirectoryName/Containers/com.vendor.bundle/Applications/DeepNestedApplication.app',
+        architecture: 'universal',
+        sizeBytes: 1200 * 1024 * 1024,
+      }),
+      createNativeApp({
+        name: 'Native App',
+        path: '/Applications/Native.app',
+        architecture: 'x86_64',
+        sizeBytes: 45 * 1024 * 1024,
+      }),
+    ];
+
+    for (const app of testApps) {
+      const card = renderBentoCard(app);
+      const lines = card.split('\n');
+      const widths = lines.map((l) => stringWidth(l));
+      const uniqueWidths = new Set(widths);
+      assert.equal(
+        uniqueWidths.size,
+        1,
+        `All lines must have identical display width for ${app.name}, got widths: ${[...uniqueWidths].join(', ')}`,
+      );
+      assert.equal(widths[0], 78, 'Card should default to 78 display columns (including indentation)');
+    }
   });
 });
