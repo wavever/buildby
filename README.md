@@ -37,7 +37,7 @@ It also surfaces **CPU architecture** (Apple Silicon `arm64`, Intel `x86_64`, `u
 - Single-app inspection, full installed-app scan, and per-stack filters.
 - Native CPU architecture detection (Apple Silicon arm64, Intel x86_64, Universal binary).
 - Two-app side-by-side comparison (`buildby compare <app1> <app2>`).
-- Interactive fuzzy search mode (`buildby -i`).
+- Fast app browser and fuzzy search (`buildby -i`).
 - Multiple export formats: formatted terminal report, `--json`, `--markdown`, and `--csv`.
 - Signature and notarization metadata for macOS and Windows apps.
 - Cross-platform support for macOS, Windows, and Linux (.desktop entries & Flatpak/Snap).
@@ -48,7 +48,7 @@ It also surfaces **CPU architecture** (Apple Silicon `arm64`, Intel `x86_64`, `u
   <a href="./assets/pk-demo.mp4">
     <img src="./assets/pk-demo.gif" width="760" alt="buildby vs / pk demo">
   </a>
-  <p><em>Interactive App Comparison (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
+  <p><em>App Comparison (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
 </div>
 
 ## Screenshots
@@ -85,9 +85,9 @@ node bin/buildby.js
 
 ### Automatic Update Prompt & Manual Update
 
-In an interactive terminal, `buildby` checks whether a newer release is published before executing your command:
+In a terminal, `buildby` checks whether a newer release is published before executing your command:
 
-- **Interactive Dialog**: If an update exists, a notification box is shown.
+- **Notification Box**: If an update exists, a notification box is shown.
 - **Keyboard Navigation**: Use `↑` / `↓` or `1`/`2` to select **Update now and continue** or **Skip for now**, and press `Enter` (or `q` / `Esc` to skip).
 - **Seamless Execution**: When you choose update, `buildby` installs the release globally and immediately re-launches your original command using the new version.
 - **Opt-out**: Pass `--no-update-check`, set `BUILDBY_NO_UPDATE_CHECK=1`, or configure `"checkForUpdates": false` in `config.json`.
@@ -108,13 +108,13 @@ installing over it.
 
 ## Usage
 
-### Interactive TUI Mode (Default)
+### App Browser & Search (Default)
 
-Running `buildby` with no arguments in a terminal launches the interactive app browser:
+Running `buildby` with no arguments in a terminal launches the app browser:
 
 ```bash
-buildby                  # Launches interactive app browser
-buildby -i               # Explicit interactive flag
+buildby                  # Launches app browser
+buildby -i               # Search & select mode
 buildby ui               # Alias
 ```
 
@@ -133,7 +133,7 @@ buildby vs "ChatGPT" "Amphetamine"
 buildby pk "WeChat" "Discord"
 buildby compare "Visual Studio Code" "Sublime Text"
 
-# Or enter interactive multi-select comparison mode
+# Or enter multi-select comparison mode
 buildby vs
 # → Browse with ↑/↓, press Space to select 2 apps, press Enter to compare!
 ```

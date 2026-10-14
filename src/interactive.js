@@ -181,7 +181,7 @@ export async function runInteractiveSelect(apps, onSelect, {
     updateScroll();
 
     const lines = [];
-    const title = isZh ? '🔍 buildby 交互式应用检测' : '🔍 buildby Interactive App Inspector';
+    const title = isZh ? '🔍 buildby 应用检测' : '🔍 buildby App Inspector';
     const totalCount = candidates.length;
     const posText = totalCount > 0 ? `(${selectedIndex + 1}/${totalCount})` : '(0/0)';
     const prompt = isZh ? '搜索应用' : 'Search apps';
@@ -261,7 +261,7 @@ export async function runInteractiveSelect(apps, onSelect, {
           resolve(selected);
         }
       } else {
-        output.write(chalk.dim(`\n${isZh ? '已退出交互模式。' : 'Exited interactive mode.'}\n\n`));
+        output.write(chalk.dim(`\n${isZh ? '已退出。' : 'Exited.'}\n\n`));
         resolve(null);
       }
     };
@@ -455,7 +455,7 @@ export async function runInteractiveCompare(apps, onCompare, {
     updateScroll();
 
     const lines = [];
-    const title = isZh ? '⚖️  buildby 应用对比模式' : '⚖️  buildby App Comparison';
+    const title = isZh ? '⚖️  buildby 应用对比' : '⚖️  buildby App Comparison';
     const totalCount = candidates.length;
     const posText = totalCount > 0 ? `(${selectedIndex + 1}/${totalCount})` : '(0/0)';
     const countBadge = selectedMap.size === 2
@@ -551,7 +551,7 @@ export async function runInteractiveCompare(apps, onCompare, {
           resolve(selectedList);
         }
       } else {
-        output.write(chalk.dim(`\n${isZh ? '已退出对比模式。' : 'Exited comparison mode.'}\n\n`));
+        output.write(chalk.dim(`\n${isZh ? '已退出。' : 'Exited.'}\n\n`));
         resolve(null);
       }
     };

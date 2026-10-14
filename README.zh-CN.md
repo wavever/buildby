@@ -37,7 +37,7 @@
 - 支持单应用查看、全量扫描、按技术栈过滤。
 - 原生 CPU 芯片架构识别（Apple Silicon arm64 / Intel x86_64 / Universal 二进制）。
 - 双应用横向对比模式（`buildby compare <app1> <app2>`）。
-- 交互式应用模糊搜索模式（`buildby -i`）。
+- 应用快速浏览与模糊搜索（`buildby -i`）。
 - 多种导出格式：终端排版、`--json`、`--markdown` 和 `--csv`。
 - 展示 macOS 与 Windows 应用的签名、公证和信任状态。
 - 跨平台支持：macOS、Windows 与 Linux（.desktop 与 Flatpak/Snap）。
@@ -48,7 +48,7 @@
   <a href="./assets/pk-demo.mp4">
     <img src="./assets/pk-demo.gif" width="760" alt="buildby vs / pk demo">
   </a>
-  <p><em>交互式双应用 PK 对比模式 (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
+  <p><em>双应用 PK 对比 (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
 </div>
 
 ## 截图
@@ -85,9 +85,9 @@ node bin/buildby.js
 
 #### 自动检查更新与手动升级
 
-在交互式终端中，`buildby` 在执行命令前会自动进行快速、轻量的版本检查：
+在终端中，`buildby` 在执行命令前会自动进行快速、轻量的版本检查：
 
-- **交互式弹窗**：当发现新版本时，终端会弹出类似 Codex 的更新提示框。
+- **新版本提示**：当发现新版本时，终端会弹出类似 Codex 的更新提示框。
 - **全键盘选择**：使用方向键 `↑` / `↓` 或数字键 `1` / `2` 切换 **立即升级** 或 **稍后升级（跳过）**，按 `Enter` 确认（按 `q` 或 `Esc` 快速跳过）。
 - **无感继续执行**：选择升级后，`buildby` 会自动通过 npm 安装最新版本，并在安装完成后**直接调用新版本继续执行您原本输入的命令**！
 - **跳过检查**：支持添加 `--no-update-check` 参数、设置环境变量 `BUILDBY_NO_UPDATE_CHECK=1`，或在 `config.json` 中配置 `"checkForUpdates": false`。
@@ -104,13 +104,13 @@ buildby update --check   # 仅检查是否有新版本，不安装
 
 ### 用法
 
-#### 交互式终端模式（默认模式）
+#### 应用浏览与搜索（默认模式）
 
-在交互式终端中直接运行 `buildby` 不传参数，默认启动交互式 TUI 浏览器：
+在终端中直接运行 `buildby` 不传参数，默认启动应用浏览与搜索：
 
 ```bash
-buildby                  # 默认进入交互式应用浏览与搜索
-buildby -i               # 显式交互模式
+buildby                  # 默认浏览与搜索已安装应用
+buildby -i               # 指定搜索浏览模式
 buildby ui               # 别名
 ```
 
@@ -129,7 +129,7 @@ buildby vs "ChatGPT" "Amphetamine"
 buildby pk "WeChat" "Discord"
 buildby compare "Visual Studio Code" "Sublime Text"
 
-# 或直接进入交互式多选对比模式
+# 或直接进入多选对比
 buildby vs
 # → 方向键浏览，按空格键勾选两个应用，回车即可开始并排对比！
 ```

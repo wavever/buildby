@@ -504,7 +504,7 @@ async function handleCompare(app1Query, app2Query, opts = {}) {
   }
 
   if (!app1Query || !app2Query) {
-    printError('Please specify two applications to compare (e.g. `buildby vs app1 app2`) or run in an interactive terminal.');
+    printError('Please specify two applications to compare (e.g. `buildby vs app1 app2`).');
     return;
   }
 
