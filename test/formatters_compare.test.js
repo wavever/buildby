@@ -428,3 +428,40 @@ describe('compare command aliases', () => {
     assert.deepEqual(cmd.aliases(), ['vs', 'pk']);
   });
 });
+
+describe('printAppDetail', () => {
+  test('renders structured inspection report with key sections and aligned specs', async () => {
+    const { printAppDetail } = await import('../src/display.js');
+    const app = createMockApp({
+      name: 'TestApp',
+      path: '/Applications/TestApp.app',
+      architecture: 'arm64',
+      sizeBytes: 150 * 1024 * 1024,
+      frameworkVersion: '32.1.0',
+    });
+
+    const logs = [];
+    const origLog = console.log;
+    console.log = (...args) => logs.push(args.join(' '));
+
+    try {
+      printAppDetail(app);
+    } finally {
+      console.log = origLog;
+    }
+
+    const output = logs.join('\n');
+    assert.ok(output.includes('TestApp'));
+    assert.ok(output.includes('/Applications/TestApp.app'));
+    assert.ok(output.includes('Electron'));
+    assert.ok(output.includes('32.1.0'));
+    assert.ok(output.includes('核心规格') || output.includes('Key Specifications'));
+    assert.ok(output.includes('Apple Silicon (arm64)') || output.includes('arm64'));
+    assert.ok(output.includes('150.0 MB'));
+    assert.ok(output.includes('com.microsoft.VSCode'));
+    assert.ok(output.includes('判定依据') || output.includes('Detection Evidence'));
+    assert.ok(output.includes('app.asar'));
+    assert.ok(output.includes('签名与安全') || output.includes('Security & Trust'));
+    assert.ok(output.includes('Microsoft Corporation'));
+  });
+});

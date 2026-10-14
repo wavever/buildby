@@ -89,6 +89,26 @@ export function colorStack(stackId, text) {
 }
 
 /**
+ * Pad a label string to a fixed visual display width.
+ */
+function padLabel(str, width = 14) {
+  const s = String(str ?? '');
+  const w = stringWidth(s);
+  return w >= width ? s : s + ' '.repeat(width - w);
+}
+
+/**
+ * Render an elegant section divider header with icon and rule.
+ */
+function renderSectionDivider(icon, title) {
+  const text = `  ${icon} ${chalk.bold(title)} `;
+  const w = stringWidth(text);
+  const termCols = process.stdout.columns || 80;
+  const maxLine = Math.min(68, Math.max(30, termCols - 4));
+  return text + chalk.dim('─'.repeat(Math.max(6, maxLine - w)));
+}
+
+/**
  * Render the signature & notarization section for a single app.
  * No-ops when no signature data was collected (batch-scan path).
  * @param {import('./analyzer.js').AnalysisResult} result
@@ -98,59 +118,104 @@ function renderSecurity(result) {
   const not = result.notarization;
   if (!sig && !not) return;
 
-  console.log(`  ${chalk.bold(t('label_security_section'))}`);
-
+  const rows = [];
   if (result.platform === 'darwin') {
-    if (sig?.developer) {
-      console.log(`    ${chalk.bold(t('label_developer'))} ${chalk.dim(sig.developer)}`);
-    }
-    if (sig?.teamId) {
-      console.log(`    ${chalk.bold(t('label_team_id'))} ${chalk.dim(sig.teamId)}`);
+    if (sig) {
+      let label = t('sec_signed_valid');
+      let color = chalk.green;
+      let badge = '✓';
+      if (!sig.signed && !sig.adHoc) {
+        label = t('sec_unsigned');
+        color = chalk.red;
+        badge = '✗';
+      } else if (sig.adHoc) {
+        label = t('sec_ad_hoc');
+        color = chalk.yellow;
+        badge = '⚠';
+      }
+      rows.push({
+        label: t('label_sec_signature'),
+        val: color(`${badge} ${label}`) + (sig.signed ? chalk.dim(' (Valid)') : ''),
+      });
     }
 
-    if (sig) {
-      let label, color;
-      if (!sig.signed && !sig.adHoc) { label = t('value_unsigned'); color = chalk.red; }
-      else if (sig.adHoc) { label = t('value_ad_hoc'); color = chalk.yellow; }
-      else { label = t('value_signed'); color = chalk.green; }
-      console.log(`    ${chalk.bold(t('label_signature'))} ${color(label)}`);
+    if (sig?.developer) {
+      const devVal = sig.teamId
+        ? `${sig.developer} ${chalk.dim('(Team ID: ' + sig.teamId + ')')}`
+        : sig.developer;
+      rows.push({
+        label: t('label_sec_developer'),
+        val: devVal,
+      });
     }
 
     if (not) {
-      let label, color;
-      if (not.rejected) { label = t('value_rejected'); color = chalk.red; }
-      else if (not.source === 'Apple System') { label = t('value_apple_system'); color = chalk.green; }
-      else if (/Mac App Store/i.test(not.source || '')) { label = t('value_mac_app_store'); color = chalk.green; }
-      else if (not.notarized) { label = t('value_notarized'); color = chalk.green; }
-      else { label = t('value_not_notarized'); color = chalk.yellow; }
-      console.log(`    ${chalk.bold(t('label_notarization'))} ${color(label)}`);
+      let notLabel = t('sec_notarized');
+      let notColor = chalk.green;
+      let badge = '✓';
+      if (not.rejected) {
+        notLabel = t('sec_rejected');
+        notColor = chalk.red;
+        badge = '✗';
+      } else if (not.source === 'Apple System') {
+        notLabel = t('sec_apple_system');
+      } else if (/Mac App Store/i.test(not.source || '')) {
+        notLabel = t('sec_mac_app_store');
+      } else if (!not.notarized) {
+        notLabel = t('sec_not_notarized');
+        notColor = chalk.yellow;
+        badge = '⚠';
+      }
+      const sourceSuffix = (not.source && not.source !== 'Apple System' && !/Mac App Store/i.test(not.source))
+        ? chalk.dim(` (${not.source})`)
+        : '';
+      rows.push({
+        label: t('label_sec_notarization'),
+        val: notColor(`${badge} ${notLabel}`) + sourceSuffix,
+      });
     } else if (sig?.notarizationTicket) {
-      // spctl unavailable / timed out, but codesign reported a stapled ticket.
-      console.log(`    ${chalk.bold(t('label_notarization'))} ${chalk.green(t('value_notarized'))}`);
+      rows.push({
+        label: t('label_sec_notarization'),
+        val: chalk.green(`✓ ${t('sec_stapled_ticket')}`),
+      });
     }
 
     if (sig) {
-      const mark = sig.hardenedRuntime
-        ? chalk.green(`✓ ${t('value_yes')}`)
-        : chalk.yellow(`✗ ${t('value_no')}`);
-      console.log(`    ${chalk.bold(t('label_hardened_runtime'))} ${mark}`);
+      const hr = sig.hardenedRuntime
+        ? chalk.green(`✓ ${t('sec_hardened_enabled')}`) + chalk.dim(' (Hardened Runtime)')
+        : chalk.yellow(`✗ ${t('sec_hardened_disabled')}`);
+      rows.push({
+        label: t('label_sec_hardened'),
+        val: hr,
+      });
     }
   } else if (result.platform === 'win32' && sig) {
     if (sig.publisher) {
-      console.log(`    ${chalk.bold(t('label_publisher'))} ${chalk.dim(sig.publisher)}`);
+      rows.push({
+        label: t('label_sec_publisher'),
+        val: sig.publisher,
+      });
     }
     const status = sig.status || (sig.signed ? 'Valid' : 'NotSigned');
-    const color = sig.signed
-      ? chalk.green
-      : (status === 'NotSigned' ? chalk.red : chalk.yellow);
-    console.log(`    ${chalk.bold(t('label_signature'))} ${color(status)}`);
+    const color = sig.signed ? chalk.green : (status === 'NotSigned' ? chalk.red : chalk.yellow);
+    const badge = sig.signed ? '✓' : (status === 'NotSigned' ? '✗' : '⚠');
+    rows.push({
+      label: t('label_sec_signature'),
+      val: color(`${badge} ${status}`),
+    });
   }
 
+  if (rows.length === 0) return;
+
+  console.log(renderSectionDivider('🔒', t('section_security')));
+  for (const s of rows) {
+    console.log(`    ${chalk.dim('•')} ${chalk.dim(padLabel(s.label, 14))} ${s.val}`);
+  }
   console.log();
 }
 
 /**
- * Print a single app's tech stack details.
+ * Print a single app's tech stack details with modern visual hierarchy and aligned specs.
  * @param {import('./analyzer.js').AnalysisResult} result
  */
 export function printAppDetail(result) {
@@ -158,59 +223,87 @@ export function printAppDetail(result) {
   const colorFn = STACK_COLORS[result.stack] || chalk.white;
 
   console.log();
-  console.log(chalk.bold(`  ${result.name}`));
-  console.log(chalk.dim(`  ${result.path}`));
-  console.log();
+  const ver = result.metadata?.version ? chalk.dim(` (v${result.metadata.version})`) : '';
+  console.log(`  ${chalk.bold.white('📦 ' + result.name)}${ver}`);
+  console.log(`  ${chalk.dim('📂 ' + result.path)}\n`);
 
+  // Hero Verdict Banner
   const categoryBadge =
     result.category === 'native'
       ? chalk.bgGreen.black(t('badge_native'))
-      : chalk.bgBlue.white(t('badge_cross'));
+      : chalk.bgCyan.black(t('badge_cross'));
 
-  console.log(`  ${categoryBadge}  ${icon} ${colorFn.bold(result.stackName)}`);
-  console.log();
+  const fwVer = result.frameworkVersion ? chalk.dim(' · ') + chalk.cyan.bold('v' + result.frameworkVersion) : '';
+  console.log(`  ${categoryBadge}  ${icon} ${colorFn.bold(result.stackName)}${fwVer}`);
 
   const desc = stackDesc(result.stack, result.description);
   if (desc) {
     console.log(`  ${chalk.dim(desc)}`);
-    if (result.website) {
-      console.log(`  ${chalk.dim.underline(result.website)}`);
+  }
+  if (result.website) {
+    console.log(`  ${chalk.dim('🌐 ' + chalk.underline(result.website))}`);
+  }
+  console.log();
+
+  // Section 1: Specifications (核心规格)
+  const specs = [];
+  if (result.architecture && result.architecture !== 'unknown') {
+    let archLabel = result.architecture;
+    if (result.architecture === 'universal') {
+      archLabel = 'Universal (Apple Silicon · Intel)';
+    } else if (result.architecture === 'arm64' && result.platform === 'darwin') {
+      archLabel = 'Apple Silicon (arm64)';
+    } else if (result.architecture === 'x86_64') {
+      archLabel = 'Intel (x86_64)';
     }
-    console.log();
+    const archColor = (result.architecture === 'arm64' || result.architecture === 'universal')
+      ? chalk.green
+      : chalk.yellow;
+    specs.push({
+      label: t('label_spec_arch'),
+      val: archColor(archLabel),
+    });
   }
 
-  if (result.evidence && result.evidence.length > 0) {
-    console.log(`  ${chalk.bold(t('label_evidence'))}`);
-    for (const e of result.evidence) {
-      console.log(`    ${chalk.dim('•')} ${e}`);
-    }
-    console.log();
+  if (result.sizeBytes > 0) {
+    specs.push({
+      label: t('label_spec_size'),
+      val: chalk.bold.white(formatSize(result.sizeBytes)),
+    });
+  }
+
+  if (result.metadata?.version) {
+    specs.push({
+      label: t('label_spec_version'),
+      val: result.metadata.version,
+    });
   }
 
   if (result.metadata?.bundleId) {
-    console.log(`  ${chalk.bold(t('label_bundle_id'))} ${chalk.dim(result.metadata.bundleId)}`);
+    specs.push({
+      label: t('label_spec_bundle_id'),
+      val: chalk.dim(result.metadata.bundleId),
+    });
   }
-  if (result.metadata?.version) {
-    console.log(`  ${chalk.bold(t('label_version'))} ${chalk.dim(result.metadata.version)}`);
-  }
-  if (result.frameworkVersion) {
-    console.log(`  ${chalk.bold(t('label_framework_version'))} ${chalk.cyan(result.frameworkVersion)}`);
-  }
-  if (result.architecture && result.architecture !== 'unknown') {
-    const archLabel = result.architecture === 'universal'
-      ? 'Universal (Apple Silicon · Intel)'
-      : (result.architecture === 'arm64' && result.platform === 'darwin'
-        ? 'Apple Silicon (arm64)'
-        : result.architecture);
-    console.log(`  ${chalk.bold(t('label_architecture'))} ${chalk.green(archLabel)}`);
-  }
-  if (result.sizeBytes > 0) {
-    console.log(`  ${chalk.bold(t('label_size'))} ${chalk.dim(formatSize(result.sizeBytes))}`);
-  }
-  if (result.metadata?.bundleId || result.metadata?.version || result.frameworkVersion || (result.architecture && result.architecture !== 'unknown') || result.sizeBytes > 0) {
+
+  if (specs.length > 0) {
+    console.log(renderSectionDivider('📋', t('section_specs')));
+    for (const s of specs) {
+      console.log(`    ${chalk.dim('•')} ${chalk.dim(padLabel(s.label, 14))} ${s.val}`);
+    }
     console.log();
   }
 
+  // Section 2: Detection Evidence (判定依据)
+  if (result.evidence && result.evidence.length > 0) {
+    console.log(renderSectionDivider('🔍', t('section_evidence')));
+    for (const e of result.evidence) {
+      console.log(`    ${chalk.cyan('•')} ${e}`);
+    }
+    console.log();
+  }
+
+  // Section 3: Security & Trust (签名与安全)
   renderSecurity(result);
 }
 
