@@ -149,32 +149,28 @@ buildby "clash verge"
 
 Output example:
 
-```
-  Discord
-  /Applications/Discord.app
-
-   CROSS-PLATFORM   ⚡ Electron
-
-  Cross-platform desktop apps with web technologies (HTML/CSS/JS)
-  https://www.electronjs.org
-
-  Evidence:
-    • Electron Framework.framework
-    • app.asar
-
-  Bundle ID: com.hnc.Discord
-  Version:   0.0.335
-  Size:      375.4 MB
-
-  Signature & Notarization
-    Developer:        Discord, Inc.
-    Team ID:          53Q6R32WPB
-    Signature:        Signed
-    Notarization:     Notarized
-    Hardened Runtime: ✓ Yes
+```text
+  ╭──────────────────────────────────────────────────────────────────────────╮
+  │ 📦 Discord (v0.0.335)                                      macOS · arm64 │
+  │ 📂 /Applications/Discord.app                                             │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │  CROSS-PLATFORM   ⚡ Electron                                            │
+  │ Cross-platform desktop apps with web technologies (HTML/CSS/JS)          │
+  │ 🌐 https://www.electronjs.org                                            │
+  ├───────────────────────────────────┬──────────────────────────────────────┤
+  │ 📋 Key Specifications             │ 🔒 Security & Trust                  │
+  │   • Arch: Apple Silicon (arm64)   │   • Signature: ✓ Signed              │
+  │   • Size: 375.4 MB                │   • Developer: Discord, Inc. (53Q6…  │
+  │   • Version: 0.0.335              │   • Notarization: ✓ Apple Notarized  │
+  │   • ID: com.hnc.Discord           │   • Hardened RT: ✓ Enabled           │
+  ├───────────────────────────────────┴──────────────────────────────────────┤
+  │ 🔍 Detection Evidence                                                    │
+  │   • Electron Framework.framework                                         │
+  │   • app.asar                                                             │
+  ╰──────────────────────────────────────────────────────────────────────────╯
 ```
 
-> The **Signature & Notarization** section is only printed for single-app inspection (`buildby <name>` and `--path`). `--all` and `--<stack>` skip it so batch scans stay fast.
+> The **Security & Trust** section is only collected for single-app inspection (`buildby <name>` and `--path`). `--all` and `--<stack>` skip it so batch scans stay fast.
 
 ### Scan all installed apps
 
@@ -229,7 +225,7 @@ Every mode returns the same envelope, so consumers never branch on shape:
 ```json
 {
   "schema": 1,
-  "buildbyVersion": "1.4.0",
+  "buildbyVersion": "1.5.0",
   "platform": "darwin",
   "query": { "mode": "app", "value": "calibre" },
   "apps": [

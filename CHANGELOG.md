@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] — 2026-10-15
+
+### Added
+
+- **Bento Box Dashboard Card**: Redesigned single-application inspection output (`buildby <app>`) into a modern, compact, and structured Bento Box card layout with mathematically exact border alignment and responsive column wrapping.
+- **Pre-command Update Prompt (Codex-style)**: Added fast version check before executing commands in interactive terminals, featuring a keyboard-navigable dialog (`[❯ Update now / Skip]`) and seamless post-upgrade command continuation.
+- **Interactive Comparison Preview**: Added animated terminal PK demo and recording in project documentation.
+
+### Changed
+
+- Streamlined UI terminology across Chinese and English locales by removing redundant "interactive" descriptions from headers and command outputs.
+- Enhanced application detail formatting with high-contrast architecture tags (`Apple Silicon`, `Universal (双架构)`, `Intel`) and security status badges.
+
 ## [1.4.0] — 2026-10-14
 
 ### Added

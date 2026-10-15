@@ -1,6 +1,6 @@
 {
   "name": "@wavever/buildby",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Detect the technology stack, code signature, and notarization status of desktop applications (Native vs Cross-platform)",
   "type": "module",
   "repository": {

@@ -146,31 +146,27 @@ buildby "clash verge"
 输出示例：
 
 ```text
-  Discord
-  /Applications/Discord.app
-
-   跨平台   ⚡ Electron
-
-  使用 Web 技术（HTML/CSS/JS）构建的跨平台桌面应用
-  https://www.electronjs.org
-
-  检测依据：
-    • Electron Framework.framework
-    • app.asar
-
-  Bundle ID： com.hnc.Discord
-  版本： 0.0.335
-  大小： 375.4 MB
-
-  签名与公证
-    开发者： Discord, Inc.
-    团队 ID： 53Q6R32WPB
-    签名： 已签名
-    公证： 已公证
-    强化运行时： ✓ 是
+  ╭──────────────────────────────────────────────────────────────────────────╮
+  │ 📦 Discord (v0.0.335)                                      macOS · arm64 │
+  │ 📂 /Applications/Discord.app                                             │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │  跨平台   ⚡ Electron                                                    │
+  │ 使用 Web 技术（HTML/CSS/JS）构建的跨平台桌面应用                         │
+  │ 🌐 https://www.electronjs.org                                            │
+  ├───────────────────────────────────┬──────────────────────────────────────┤
+  │ 📋 核心规格                       │ 🔒 签名与安全                        │
+  │   • 架构: Apple Silicon (arm64)   │   • 签名: ✓ 已签名                   │
+  │   • 体积: 375.4 MB                │   • 开发者: Discord, Inc. (53Q6…    │
+  │   • 版本: 0.0.335                 │   • 公证: ✓ Apple 公证               │
+  │   • 标识: com.hnc.Discord         │   • 强化运行: ✓ 已启用               │
+  ├───────────────────────────────────┴──────────────────────────────────────┤
+  │ 🔍 判定依据                                                              │
+  │   • Electron Framework.framework                                         │
+  │   • app.asar                                                             │
+  ╰──────────────────────────────────────────────────────────────────────────╯
 ```
 
-> **签名与公证** 部分仅在单应用查看时输出（`buildby <name>` 与 `--path`）。`--all` 与 `--<stack>` 模式为了保证批量扫描速度，会跳过这一部分。
+> **签名与安全** 部分仅在单应用查看时输出（`buildby <name>` 与 `--path`）。`--all` 与 `--<stack>` 模式为了保证批量扫描速度，会跳过这一部分。
 
 #### 扫描所有已安装应用
 
@@ -223,7 +219,7 @@ buildby --electron --json | jq -r '.apps[].name'
 ```json
 {
   "schema": 1,
-  "buildbyVersion": "1.4.0",
+  "buildbyVersion": "1.5.0",
   "platform": "darwin",
   "query": { "mode": "app", "value": "calibre" },
   "apps": [
