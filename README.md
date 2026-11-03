@@ -3,75 +3,47 @@
 
   <h1>buildby</h1>
 
-  <p><strong>Detect what desktop apps are built with.</strong></p>
+  <p><strong>Is it Electron? Tauri? Native Swift? Find out in one command.</strong><br>
+  Detect any desktop app's tech stack, CPU architecture, code signature and notarization — macOS, Windows &amp; Linux.</p>
 
   <p>
-    <a href="https://www.npmjs.com/package/@wavever/buildby"><img alt="npm version" src="https://img.shields.io/npm/v/@wavever/buildby?color=CB3837&label=npm"></a>
-    <a href="https://github.com/wavever/buildby/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/wavever/buildby?label=release"></a>
-    <a href="https://github.com/wavever/buildby/actions/workflows/release.yml"><img alt="Release workflow" src="https://github.com/wavever/buildby/actions/workflows/release.yml/badge.svg"></a>
+    <a href="https://www.npmjs.com/package/@wavever/buildby"><img alt="npm" src="https://img.shields.io/npm/v/@wavever/buildby?color=CB3837&label=npm"></a>
+    <a href="https://www.npmjs.com/package/@wavever/buildby"><img alt="downloads" src="https://img.shields.io/npm/dm/@wavever/buildby"></a>
+    <a href="https://github.com/wavever/buildby/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/wavever/buildby?style=flat"></a>
     <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/wavever/buildby"></a>
-    <img alt="Node.js" src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=nodedotjs&amp;logoColor=white">
     <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-555">
   </p>
 
   <p>
+    <a href="https://wavever.github.io/buildby/">Website</a>
+    ·
     <a href="./README.zh-CN.md">简体中文</a>
-    ·
-    <a href="#demo">Demo</a>
-    ·
-    <a href="#quick-start--install">Install</a>
     ·
     <a href="#usage">Usage</a>
     ·
-    <a href="#detected-tech-stacks">Tech Stacks</a>
+    <a href="#detected-tech-stacks">23 Tech Stacks</a>
   </p>
+
+  <a href="./assets/pk-demo.mp4"><img src="./assets/pk-demo.gif" width="760" alt="buildby demo"></a>
+  <p><em>Side-by-side comparison (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
 </div>
 
-`buildby` inspects desktop applications on macOS, Windows, and Linux, then tells you whether each app is built with **native technologies** (Swift, Objective-C, Win32) or a **cross-platform framework** such as Electron, Flutter, Tauri, Qt, JVM, CEF, NW.js, React Native, wxWidgets, Unity, .NET, Neutralinojs, or Sciter.
-
-It also surfaces **CPU architecture** (Apple Silicon `arm64`, Intel `x86_64`, `universal`), **framework versions**, and **signature & notarization** details.
-
-## Highlights
-
-- Fast file-system and binary header detection with zero admin privileges required.
-- Single-app inspection, full installed-app scan, and per-stack filters.
-- Native CPU architecture detection (Apple Silicon arm64, Intel x86_64, Universal binary).
-- Two-app side-by-side comparison (`buildby compare <app1> <app2>`).
-- Fast app browser and fuzzy search (`buildby -i`).
-- Multiple export formats: formatted terminal report, `--json`, `--markdown`, and `--csv`.
-- Signature and notarization metadata for macOS and Windows apps.
-- Cross-platform support for macOS, Windows, and Linux (.desktop entries & Flatpak/Snap).
-
-## Demo
-
-<div align="center">
-  <a href="./assets/pk-demo.mp4">
-    <img src="./assets/pk-demo.gif" width="760" alt="buildby vs / pk demo">
-  </a>
-  <p><em>App Comparison (<code>buildby vs</code> / <code>buildby pk</code>)</em></p>
-</div>
-
-## Screenshots
-
-| Inspect a single app | Scan all installed apps | Filter by tech stack |
-| :---: | :---: | :---: |
-| ![](/screenshot/img-app-en.png) | ![](/screenshot/img-scan-en.png) | ![](/screenshot/img-filter-en.png) |
-
-## Quick Start & Install
-
-### Run instantly with npx (No install needed)
+## Try it in 10 seconds
 
 ```bash
-npx @wavever/buildby
+npx @wavever/buildby                        # browse and search installed apps
+npx @wavever/buildby discord                # inspect one app
+npx @wavever/buildby vs "ChatGPT" "Discord" # side-by-side comparison
 ```
 
-### Global Installation
+Like it? `npm i -g @wavever/buildby`, then just run `buildby`.
+
+> Formerly `desktop-app-build-by` (deprecated). The command is still `buildby`. See [CHANGELOG.md](./CHANGELOG.md).
+
+<details>
+<summary>Install from source</summary>
 
 ```bash
-# Install globally via npm
-npm i -g @wavever/buildby
-
-# Clone and link globally from source
 git clone https://github.com/wavever/buildby.git
 cd buildby
 npm install
@@ -81,30 +53,21 @@ npm link
 node bin/buildby.js
 ```
 
-> Previously published as `desktop-app-build-by`. That name is now **deprecated** — please switch to `npm i -g @wavever/buildby`. The CLI command stays `buildby`. See [CHANGELOG.md](./CHANGELOG.md) for details.
+</details>
 
-### Automatic Update Prompt & Manual Update
+## Highlights
 
-In a terminal, `buildby` checks whether a newer release is published before executing your command:
+- 🔍 **23 stacks detected** — Electron, Tauri, Flutter, Qt, CEF, React Native, .NET, JVM, Unity, Godot… or Native.
+- 🧬 **Architecture & versions** — arm64 / x86_64 / universal, plus Electron, Flutter, and Qt versions.
+- 🔒 **Trust check** — developer, Team ID, Apple notarization, Hardened Runtime, Authenticode.
+- ⚡ **Fast & safe** — pure-JS binary header parsing, no admin rights, cached batch scans.
+- 📤 **Export anywhere** — `--json`, `--md`, `--csv` for scripts and reports.
 
-- **Notification Box**: If an update exists, a notification box is shown.
-- **Keyboard Navigation**: Use `↑` / `↓` or `1`/`2` to select **Update now and continue** or **Skip for now**, and press `Enter` (or `q` / `Esc` to skip).
-- **Seamless Execution**: When you choose update, `buildby` installs the release globally and immediately re-launches your original command using the new version.
-- **Opt-out**: Pass `--no-update-check`, set `BUILDBY_NO_UPDATE_CHECK=1`, or configure `"checkForUpdates": false` in `config.json`.
+## Screenshots
 
-```bash
-# Manual update commands:
-buildby update           # Check for a newer release and install it
-buildby update --check   # Only report whether an update exists
-```
-
-`update` asks npm for the latest published version, so your own registry
-mirror, proxy and auth settings are respected. When the running copy is a git
-checkout or an `npm link`ed build, it reports the path and stops instead of
-installing over it.
-
-> Because `update` is a subcommand, an app literally named "update" can no
-> longer be inspected by name — use `buildby --path` for that.
+| Inspect a single app | Scan all installed apps | Filter by tech stack |
+| :---: | :---: | :---: |
+| ![](./screenshot/img-app-en.png) | ![](./screenshot/img-scan-en.png) | ![](./screenshot/img-filter-en.png) |
 
 ## Usage
 
@@ -115,7 +78,7 @@ Running `buildby` with no arguments in a terminal launches the app browser:
 ```bash
 buildby                  # Launches app browser
 buildby -i               # Search & select mode
-buildby ui               # Alias
+buildby interactive      # Same browser, as a subcommand
 ```
 
 - **Keyboard Navigation**: Use `↑` / `↓` arrows to navigate through installed apps, `Enter` to select and inspect an app in detail.
@@ -210,15 +173,16 @@ buildby --all --csv > installed-apps.csv
 
 #### JSON Output (`--json`)
 
-Add `--json` to any inspection mode to get machine-readable output on stdout
-(`update` is an action command and has no JSON form). Progress and
-errors stay on stderr, so stdout is always safe to pipe.
+Add `--json` to any inspection mode to get machine-readable output on stdout (`update` is an action command and has no JSON form). Progress and errors stay on stderr, so stdout is always safe to pipe.
 
 ```bash
 buildby discord --json
 buildby --all --json | jq '.summary.stacks'
 buildby --electron --json | jq -r '.apps[].name'
 ```
+
+<details>
+<summary>JSON schema, field notes, and exit codes</summary>
 
 Every mode returns the same envelope, so consumers never branch on shape:
 
@@ -269,9 +233,14 @@ On error, stdout carries a parseable error object instead of `apps`:
 { "schema": 1, "error": { "code": "path_not_found", "message": "Path not found: /nope" } }
 ```
 
+</details>
+
 ### Configuration
 
-BuildBy creates a default JSON config file on first run, then reads it on later runs:
+BuildBy creates a default JSON config on first run, then reads it later. Batch scans honor `cache` and `excludeApps`.
+
+<details>
+<summary>Config paths and options</summary>
 
 - macOS/Linux/other: `$XDG_CONFIG_HOME/buildby/config.json` or `~/.config/buildby/config.json`
 - Windows: `%APPDATA%\buildby\config.json`
@@ -292,6 +261,10 @@ You can also point to a custom config file with `BUILDBY_CONFIG=/path/to/config.
 ```
 
 `cache: false` disables the analysis cache by default. `excludeApps` removes matching apps from `--all` and per-stack scans; entries can be app names, Bundle IDs, or full paths. Single-app inspection still works for excluded apps.
+
+`"checkForUpdates": false` skips the pre-command update prompt. The same opt-out is available as `--no-update-check` or `BUILDBY_NO_UPDATE_CHECK=1`.
+
+</details>
 
 ### Language
 
@@ -331,6 +304,24 @@ buildby -n     # All native apps (--native)
 buildby --path /Applications/SomeApp.app
 buildby --path "C:\Program Files\SomeApp"
 ```
+
+## Updates
+
+In a terminal, `buildby` checks whether a newer release is published before executing your command:
+
+- **Notification Box**: If an update exists, a notification box is shown.
+- **Keyboard Navigation**: Use `↑` / `↓` or `1`/`2` to select **Update now and continue** or **Skip for now**, and press `Enter` (or `q` / `Esc` to skip).
+- **Seamless Execution**: When you choose update, `buildby` installs the release globally and immediately re-launches your original command using the new version.
+- **Opt-out**: Pass `--no-update-check`, set `BUILDBY_NO_UPDATE_CHECK=1`, or configure `"checkForUpdates": false` in `config.json`.
+
+```bash
+buildby update           # Check for a newer release and install it
+buildby update --check   # Only report whether an update exists
+```
+
+`update` asks npm for the latest published version, so your own registry mirror, proxy and auth settings are respected. When the running copy is a git checkout or an `npm link`ed build, it reports the path and stops instead of installing over it.
+
+> Because `update` is a subcommand, an app literally named "update" can no longer be inspected by name — use `buildby --path` for that.
 
 ## Detected Tech Stacks
 
